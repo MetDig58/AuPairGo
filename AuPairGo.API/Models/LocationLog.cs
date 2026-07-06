@@ -1,6 +1,6 @@
 namespace AuPairGo.API.Models;
 
-public class LocationLogs
+public class LocationLog
 {
     public int Id { get; set; }
     public int ScheduleId { get; set; }
