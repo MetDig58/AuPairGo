@@ -1,0 +1,6 @@
+@AuPairGo.API_HostAddress = http://localhost:5175
+
+GET {{AuPairGo.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

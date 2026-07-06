@@ -1,0 +1,10 @@
+## Ignore Visual Studio & VS Code temporary folders
+.vscode/
+bin/
+obj/
+*.user
+*.suo
+
+## Ignore OS specific files
+.DS_Store
+Thumbs.db
