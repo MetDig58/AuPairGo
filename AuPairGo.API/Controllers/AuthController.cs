@@ -48,5 +48,36 @@ namespace AuPairGo.API.Controllers
 
             return Ok("User registered successfully and password encrypted!");
         }
+
+        [HttpPost("login")] // URL: api/auth/register
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            //1. look for the user in the database by email
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            // 2. if user doesnt exist, return a generic error message
+            if (user == null)
+            {
+                return Unauthorized("Invalid email or password.");
+            }
+
+            // 3. if user exists, verify the password using BCrypt
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.Password);
+            if (!isPasswordValid)
+            {
+                return Unauthorized("Invalid email or password.");
+            }
+
+            // 4. temporarily, we return user details(we will upgrade this to hand back a secure JWT token)
+            return Ok(new
+            {
+                user.Id,
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                user.CellNumber,
+                user.IdNumber,
+                user.Role
+            });
+        }
     }
 }
