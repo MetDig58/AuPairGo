@@ -11,6 +11,9 @@ namespace AuPairGo.API.Data
         }                                                                           //
 
         public DbSet<User> Users { get; set; }
+        public DbSet<AuPairProfile> AuPairProfiles { get; set; }
+        public DbSet<ParentProfile> ParentProfiles { get; set; }
+        public DbSet<ChildProfile> ChildProfiles { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<ParentChildLink> ParentChildLinks { get; set; }
