@@ -19,5 +19,14 @@ namespace AuPairGo.API.Data
         public DbSet<ParentChildLink> ParentChildLinks { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<LocationLog> LocationLogs { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Global Query Filter: Automatically exclude soft-deleted children from ALL queries
+            modelBuilder.Entity<ChildProfile>()
+                .HasQueryFilter(c => !c.IsDeleted);
+        }
     }
 }

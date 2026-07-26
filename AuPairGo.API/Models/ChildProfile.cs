@@ -11,8 +11,15 @@ namespace AuPairGo.API.Models
         [Required]
         public int UserId { get; set; }
 
+
         [ForeignKey("UserId")]
         public User? User { get; set; }
+
+        [Required]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required]
+        public string LastName { get; set; } = string.Empty;
 
         [Required]
         public string Allergies { get; set; } = string.Empty;
@@ -22,5 +29,9 @@ namespace AuPairGo.API.Models
 
         [Required]
         public string SpecialInstructions { get; set; } = string.Empty;
+
+        //soft delete properties
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
     }
 }
