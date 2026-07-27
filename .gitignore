@@ -8,3 +8,6 @@ obj/
 ## Ignore OS specific files
 .DS_Store
 Thumbs.db
+
+publish/
+deploy.zip
