@@ -16,12 +16,9 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// 4. Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+// 4. Configure the HTTP request pipeline (Available in both Dev and Prod)
+app.MapOpenApi();
+app.MapScalarApiReference();
 
 app.UseHttpsRedirection();
 
