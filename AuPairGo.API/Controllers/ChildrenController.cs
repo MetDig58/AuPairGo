@@ -19,7 +19,7 @@ namespace AuPairGo.API.Controllers
 
         // POST: api/parents/{ParentId}/children
         [HttpPost]
-        public async Task<IActionResult> AddChild(int ParentId, [FromBody] AddChildDto dto)
+        public async Task<IActionResult> CreateChildProfile(int ParentId, [FromBody] CreateChildDto dto)
         {
             // Verify parent exists and has Parent role
             var parentUser = await _context.Users
@@ -43,7 +43,7 @@ namespace AuPairGo.API.Controllers
             _context.ChildProfiles.Add(child);
             await _context.SaveChangesAsync();
 
-            var response = new ChildResponseDto
+            var response = new ChildProfileResponseDto
             {
                 Id = child.Id,
                 UserId = child.UserId,
@@ -63,7 +63,7 @@ namespace AuPairGo.API.Controllers
         {
             var children = await _context.ChildProfiles
                 .Where(child => child.UserId == ParentId && !child.IsDeleted) // Included !IsDeleted
-                .Select(child => new ChildResponseDto
+                .Select(child => new ChildProfileResponseDto
                 {
                     Id = child.Id,
                     UserId = child.UserId,
@@ -84,7 +84,7 @@ namespace AuPairGo.API.Controllers
         {
             var child = await _context.ChildProfiles
                 .Where(child => child.Id == ChildId && child.UserId == ParentId && !child.IsDeleted)
-                .Select(child => new ChildResponseDto
+                .Select(child => new ChildProfileResponseDto
                 {
                     Id = child.Id,
                     UserId = child.UserId,
@@ -106,7 +106,7 @@ namespace AuPairGo.API.Controllers
 
         // PUT: api/parents/{ParentId}/children/{ChildId}
         [HttpPut("{ChildId}")]
-        public async Task<IActionResult> UpdateChild(int ParentId, int ChildId, [FromBody] UpdateChildDto dto)
+        public async Task<IActionResult> UpdateChildProfile(int ParentId, int ChildId, [FromBody] UpdateChildProfileDto dto)
         {
             var child = await _context.ChildProfiles
                 .FirstOrDefaultAsync(c => c.Id == ChildId && c.UserId == ParentId && !c.IsDeleted);
@@ -134,7 +134,7 @@ namespace AuPairGo.API.Controllers
 
             await _context.SaveChangesAsync();
 
-            var response = new ChildResponseDto
+            var response = new ChildProfileResponseDto
             {
                 Id = child.Id,
                 UserId = child.UserId,

@@ -194,6 +194,10 @@ namespace AuPairGo.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -204,6 +208,9 @@ namespace AuPairGo.API.Migrations
 
                     b.Property<int>("NumberOfChildren")
                         .HasColumnType("int");
+
+                    b.Property<string>("Suburb")
+                        .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");

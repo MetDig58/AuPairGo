@@ -13,8 +13,6 @@ namespace AuPairGo.API.Models
 
         [ForeignKey("UserId")]
         public User? User { get; set; }
-
-        [Required]
         public string Bio { get; set; } = string.Empty;
 
         [Required]
@@ -22,5 +20,10 @@ namespace AuPairGo.API.Models
 
         [Required]
         public string ChildAgeGroups { get; set; } = string.Empty;
+
+        [Required]
+        public string Address { get; set; } = string.Empty;
+
+        public string? Suburb { get; set; }
     }
 }
