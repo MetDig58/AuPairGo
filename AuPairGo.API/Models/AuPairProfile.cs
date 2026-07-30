@@ -18,12 +18,22 @@ namespace AuPairGo.API.Models
         public string Bio { get; set; } = string.Empty;
 
         [Required]
-        public decimal HourlyRate { get; set; }
+        public string? Suburb { get; set; }
 
         [Required]
         public bool HasDriversLicense { get; set; }
 
         [Required]
-        public string Experience { get; set; } = string.Empty;
+        public bool HasCar { get; set; }
+
+        [Required]
+        public bool HasFirstAid { get; set; }
+
+        [Required]
+        [Range(0, 50)]
+        public int YearsOfExperience { get; set; }
+
+        [Required]
+        public string Availability { get; set; } = string.Empty;
     }
 }

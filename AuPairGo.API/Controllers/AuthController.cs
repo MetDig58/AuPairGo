@@ -7,18 +7,17 @@ using Microsoft.EntityFrameworkCore;
 namespace AuPairGo.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] // This makes the URL: api/auth
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
-        // Inject our database gateway into the controller
         public AuthController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        [HttpPost("register")] // URL: api/auth/register
+        [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             // 1. Check if the email is already taken
@@ -27,20 +26,19 @@ namespace AuPairGo.API.Controllers
                 return BadRequest("A user with this email already exists.");
             }
 
-            // 2. Hash the password using BCrypt before storing
-            string HashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            // 2. Hash the password using BCrypt
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
-            // 3. begin database transaction for data safety
+            // 3. Begin database transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-
-                // 4. Map the DTO data into our database User model
+                // 4. Map DTO to User model
                 var newUser = new User
                 {
                     Email = dto.Email,
-                    Password = HashedPassword,
+                    Password = hashedPassword,
                     FirstName = dto.FirstName,
                     LastName = dto.LastName,
                     CellNumber = dto.CellNumber,
@@ -48,102 +46,118 @@ namespace AuPairGo.API.Controllers
                     Role = dto.Role
                 };
 
-                //5. Check the string value of the role and initialize the matching profile
+                _context.Users.Add(newUser);
+
+                // 5. Initialize profile stub matching exact model properties
                 if (newUser.Role == "AuPair")
                 {
-                    var AuPairProfile = new AuPairProfile
+                    var auPairProfile = new AuPairProfile
                     {
                         User = newUser,
-                        Bio = string.Empty,
-                        Experience = string.Empty,
-                        HourlyRate = 0.00m,
-                        HasDriversLicense = false
+                        Bio = "Not Available",
+                        Suburb = "Not Available",
+                        HasDriversLicense = false,
+                        HasCar = false,
+                        HasFirstAid = false,
+                        YearsOfExperience = 0,
+                        Availability = "Not set"
                     };
-                    _context.AuPairProfiles.Add(AuPairProfile);
+                    _context.AuPairProfiles.Add(auPairProfile);
                 }
                 else if (newUser.Role == "Parent")
                 {
-                    var ParentProfile = new ParentProfile
+                    var parentProfile = new ParentProfile
                     {
                         User = newUser,
                         Bio = string.Empty,
                         ChildAgeGroups = string.Empty,
                         NumberOfChildren = 0
                     };
-                    _context.ParentProfiles.Add(ParentProfile);
+                    _context.ParentProfiles.Add(parentProfile);
                 }
                 else
                 {
                     return BadRequest("Invalid role assignment specified.");
                 }
 
-                // save the profile record 
                 await _context.SaveChangesAsync();
-
-                // Commit the transaction to save both tables together
                 await transaction.CommitAsync();
 
                 return Ok("User and profile records initialized successfully.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, "An error occured during account creation processing.");
+                return StatusCode(500, $"An error occurred during account creation: {ex.Message}");
             }
         }
 
-        [HttpPost("login")] // URL: api/auth/register
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            //1. look for the user in the database by email
-            var UserRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            // 2. if user doesnt exist, return a generic error message
-            if (UserRecord == null)
+            // 1. Find user by email
+            var userRecord = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (userRecord == null)
             {
                 return Unauthorized("Invalid email or password.");
             }
 
-            // 3. if user exists, verify the password using BCrypt
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, UserRecord.Password);
+            // 2. Verify password
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, userRecord.Password);
             if (!isPasswordValid)
             {
                 return Unauthorized("Invalid email or password.");
             }
 
-            // 4. Fetch the specialized profile depending on the logged in role
-            object? ProfileData = null;
-            if (UserRecord.Role == "AuPair")
-            {
-                // Query the table using users ID
-                var AuPairProfile = await _context.AuPairProfiles.FirstOrDefaultAsync(p => p.UserId == UserRecord.Id);
+            // 3. Fetch profile based on role
+            object? profileData = null;
 
-                // If it exists, map the fields into the profile object
-                if (AuPairProfile != null)
+            if (userRecord.Role == "AuPair")
+            {
+                var auPairProfile = await _context.AuPairProfiles.FirstOrDefaultAsync(p => p.UserId == userRecord.Id);
+                if (auPairProfile != null)
                 {
-                    ProfileData = new { AuPairProfile.Bio, AuPairProfile.HourlyRate, AuPairProfile.Experience, AuPairProfile.HasDriversLicense };
+                    profileData = new
+                    {
+                        auPairProfile.Id,
+                        auPairProfile.Bio,
+                        auPairProfile.Suburb,
+                        auPairProfile.HasFirstAid,
+                        auPairProfile.YearsOfExperience,
+                        auPairProfile.HasDriversLicense,
+                        auPairProfile.HasCar,
+                        auPairProfile.Availability
+                    };
                 }
             }
-            else if (UserRecord.Role == "Parent")
+            else if (userRecord.Role == "Parent")
             {
-                var ParentProfile = await _context.ParentProfiles.FirstOrDefaultAsync(p => p.UserId == UserRecord.Id);
-
-                if (ParentProfile != null)
+                var parentProfile = await _context.ParentProfiles.FirstOrDefaultAsync(p => p.UserId == userRecord.Id);
+                if (parentProfile != null)
                 {
-                    ProfileData = new { ParentProfile.Bio, ParentProfile.ChildAgeGroups, ParentProfile.NumberOfChildren };
+                    profileData = new
+                    {
+                        parentProfile.Id,
+                        parentProfile.Bio,
+                        parentProfile.ChildAgeGroups,
+                        parentProfile.NumberOfChildren,
+                        parentProfile.Address,
+                        parentProfile.Suburb
+                    };
                 }
             }
 
-            // 5. return core user details and profile payload attached(we will upgrade this to hand back a secure JWT token)
+            // 4. Return user and profile details
             return Ok(new
             {
-                UserRecord.Id,
-                UserRecord.Email,
-                UserRecord.FirstName,
-                UserRecord.LastName,
-                UserRecord.CellNumber,
-                UserRecord.IdNumber,
-                UserRecord.Role,
-                Profile = ProfileData
+                userRecord.Id,
+                userRecord.Email,
+                userRecord.FirstName,
+                userRecord.LastName,
+                userRecord.CellNumber,
+                userRecord.IdNumber,
+                userRecord.Role,
+                Profile = profileData
             });
         }
     }

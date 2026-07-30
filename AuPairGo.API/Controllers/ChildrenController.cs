@@ -19,7 +19,7 @@ namespace AuPairGo.API.Controllers
 
         // POST: api/parents/{ParentId}/children
         [HttpPost]
-        public async Task<IActionResult> CreateChildProfile(int ParentId, [FromBody] CreateChildDto dto)
+        public async Task<IActionResult> CreateChildProfile(int ParentId, [FromBody] CreateChildProfileDto dto)
         {
             // Verify parent exists and has Parent role
             var parentUser = await _context.Users

@@ -1,6 +1,6 @@
 namespace AuPairGo.API.DTOs
 {
-    public class CreateChildDto
+    public class CreateChildProfileDto
     {
         public int UserId { get; set; }
         public string FirstName { get; set; } = string.Empty;
