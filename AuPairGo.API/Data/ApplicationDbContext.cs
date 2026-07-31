@@ -19,6 +19,7 @@ namespace AuPairGo.API.Data
         public DbSet<ParentChildLink> ParentChildLinks { get; set; }
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<LocationLog> LocationLogs { get; set; }
+        public DbSet<DutyTask> DutyTasks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

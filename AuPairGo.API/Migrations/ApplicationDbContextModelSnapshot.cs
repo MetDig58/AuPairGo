@@ -143,6 +143,51 @@ namespace AuPairGo.API.Migrations
                     b.ToTable("ChildProfiles");
                 });
 
+            modelBuilder.Entity("AuPairGo.API.Models.DutyTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuPairProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("ParentProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledEndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ScheduledStartTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuPairProfileId");
+
+                    b.HasIndex("ParentProfileId");
+
+                    b.ToTable("DutyTasks");
+                });
+
             modelBuilder.Entity("AuPairGo.API.Models.LocationLog", b =>
                 {
                     b.Property<int>("Id")
@@ -345,6 +390,25 @@ namespace AuPairGo.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AuPairGo.API.Models.DutyTask", b =>
+                {
+                    b.HasOne("AuPairGo.API.Models.AuPairProfile", "AuPairProfile")
+                        .WithMany()
+                        .HasForeignKey("AuPairProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuPairGo.API.Models.ParentProfile", "ParentProfile")
+                        .WithMany()
+                        .HasForeignKey("ParentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuPairProfile");
+
+                    b.Navigation("ParentProfile");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ParentProfile", b =>

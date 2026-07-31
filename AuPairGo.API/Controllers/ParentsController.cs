@@ -66,7 +66,7 @@ namespace AuPairGo.API.Controllers
             return CreatedAtAction(nameof(GetParentProfile), new { id = ParentProfile.Id }, response);
         }
 
-        //Get: api/parents/{id}
+        //Get: api/parents/{id}     
         [HttpGet("{id}")]
         public async Task<IActionResult> GetParentProfile(int Id)
         {
