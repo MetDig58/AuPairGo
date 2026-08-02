@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuPairGo.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260726141125_AddChildNamesToChildProfile")]
-    partial class AddChildNamesToChildProfile
+    [Migration("20260802073127_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -68,21 +68,31 @@ namespace AuPairGo.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Availability")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Experience")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<bool>("HasCar")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("HasDriversLicense")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<decimal>("HourlyRate")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<bool>("HasFirstAid")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Suburb")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("YearsOfExperience")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -104,9 +114,15 @@ namespace AuPairGo.API.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -130,7 +146,7 @@ namespace AuPairGo.API.Migrations
                     b.ToTable("ChildProfiles");
                 });
 
-            modelBuilder.Entity("AuPairGo.API.Models.LocationLog", b =>
+            modelBuilder.Entity("AuPairGo.API.Models.DutyTask", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -138,30 +154,83 @@ namespace AuPairGo.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuPairID")
+                    b.Property<int>("AuPairProfileId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ChildId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ParentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ScheduleId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TimeStamp")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<double>("latitude")
-                        .HasColumnType("double");
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
 
-                    b.Property<double>("longitude")
-                        .HasColumnType("double");
+                    b.Property<int>("ParentProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledEndTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ScheduledStartTime")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LocationLogs");
+                    b.HasIndex("AuPairProfileId");
+
+                    b.HasIndex("ParentProfileId");
+
+                    b.ToTable("DutyTasks");
+                });
+
+            modelBuilder.Entity("AuPairGo.API.Models.LocationLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuPairId")
+                        .HasColumnType("int")
+                        .HasColumnName("au_pair_id");
+
+                    b.Property<int?>("ChildId")
+                        .HasColumnType("int")
+                        .HasColumnName("child_id");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double")
+                        .HasColumnName("longitude");
+
+                    b.Property<int>("ParentId")
+                        .HasColumnType("int")
+                        .HasColumnName("parent_id");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("timestamp");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("location_logs");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ParentChildLink", b =>
@@ -191,6 +260,10 @@ namespace AuPairGo.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -201,6 +274,9 @@ namespace AuPairGo.API.Migrations
 
                     b.Property<int>("NumberOfChildren")
                         .HasColumnType("int");
+
+                    b.Property<string>("Suburb")
+                        .HasColumnType("longtext");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -325,6 +401,25 @@ namespace AuPairGo.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AuPairGo.API.Models.DutyTask", b =>
+                {
+                    b.HasOne("AuPairGo.API.Models.AuPairProfile", "AuPairProfile")
+                        .WithMany()
+                        .HasForeignKey("AuPairProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuPairGo.API.Models.ParentProfile", "ParentProfile")
+                        .WithMany()
+                        .HasForeignKey("ParentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuPairProfile");
+
+                    b.Navigation("ParentProfile");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ParentProfile", b =>

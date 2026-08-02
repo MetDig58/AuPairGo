@@ -19,6 +19,6 @@ namespace AuPairGo.API.DTOs
         [Required(ErrorMessage = "Scheduled start time is required.")]
         public DateTime ScheduledStartTime { get; set; }
 
-        public DateTime ScheduledEndTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
     }
 }

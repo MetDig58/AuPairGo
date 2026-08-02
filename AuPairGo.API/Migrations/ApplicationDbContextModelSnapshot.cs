@@ -192,34 +192,42 @@ namespace AuPairGo.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuPairID")
-                        .HasColumnType("int");
+                    b.Property<int>("AuPairId")
+                        .HasColumnType("int")
+                        .HasColumnName("au_pair_id");
 
-                    b.Property<int>("ChildId")
-                        .HasColumnType("int");
+                    b.Property<int?>("ChildId")
+                        .HasColumnType("int")
+                        .HasColumnName("child_id");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double")
+                        .HasColumnName("longitude");
 
                     b.Property<int>("ParentId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("parent_id");
 
                     b.Property<int>("ScheduleId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("schedule_id");
 
                     b.Property<DateTime>("TimeStamp")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<double>("latitude")
-                        .HasColumnType("double");
-
-                    b.Property<double>("longitude")
-                        .HasColumnType("double");
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("timestamp");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LocationLogs");
+                    b.ToTable("location_logs");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ParentChildLink", b =>

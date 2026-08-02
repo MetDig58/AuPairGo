@@ -21,6 +21,7 @@ namespace AuPairGo.API.Data
         public DbSet<LocationLog> LocationLogs { get; set; }
         public DbSet<DutyTask> DutyTasks { get; set; }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

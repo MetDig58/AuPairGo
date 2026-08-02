@@ -1,5 +1,6 @@
 using AuPairGo.API.Data;
 using AuPairGo.API.DTOs;
+using AuPairGo.API.Extensions;
 using AuPairGo.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,11 @@ namespace AuPairGo.API.Controllers
             _context = context;
         }
 
-        //Post: api/duties
+        // POST: api/duties
         [HttpPost]
         public async Task<IActionResult> CreateDutyTask([FromBody] CreateDutyTaskDto dto)
         {
-            if (dto.ScheduledEndTime <= dto.ScheduledStartTime)
+            if (dto.ScheduledEndTime.HasValue && dto.ScheduledEndTime <= dto.ScheduledStartTime)
             {
                 return BadRequest("ScheduledEndTime must be after ScheduledStartTime.");
             }
@@ -45,7 +46,7 @@ namespace AuPairGo.API.Controllers
                 Title = dto.Title,
                 Description = dto.Description,
                 ScheduledStartTime = dto.ScheduledStartTime,
-                ScheduledEndTime = dto.ScheduledEndTime, // Can be null
+                ScheduledEndTime = dto.ScheduledEndTime,
                 Status = DutyStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
@@ -53,56 +54,42 @@ namespace AuPairGo.API.Controllers
             _context.DutyTasks.Add(dutyTask);
             await _context.SaveChangesAsync();
 
-            var response = MapToResponseDto(dutyTask);
-
-            return CreatedAtAction(nameof(GetDutiesForAuPair), new { auPairId = dutyTask.AuPairProfileId }, response);
+            return CreatedAtAction(
+                nameof(GetDutiesForAuPair),
+                new { auPairId = dutyTask.AuPairProfileId },
+                dutyTask.ToResponseDto()
+            );
         }
 
-        //Get: api/duties/aupair/{AuPairId}
-        [HttpGet("aupair/{AuPairId}")]
-        public async Task<IActionResult> GetDutiesForAuPair(int AuPairId)
+        // GET: api/duties/aupair/{auPairId}
+        [HttpGet("aupair/{auPairId}")]
+        public async Task<IActionResult> GetDutiesForAuPair(int auPairId)
         {
-            var Duties = await _context.DutyTasks
-            .AsNoTracking()
-            .Where(Duties => Duties.AuPairProfileId == AuPairId)
-            .OrderBy(Duties => Duties.ScheduledStartTime)
-            .Select(Duties => MapToResponseDto(Duties))
-            .ToListAsync();
+            var duties = await _context.DutyTasks
+                .AsNoTracking()
+                .Where(d => d.AuPairProfileId == auPairId)
+                .OrderBy(d => d.ScheduledStartTime)
+                .Select(d => d.ToResponseDto())
+                .ToListAsync();
 
-            return Ok(Duties);
+            return Ok(duties);
         }
 
-        //Patch: api/duties/{id}/status
+        // PATCH: api/duties/{id}/status
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateDutyStatus(int id, [FromBody] UpdateDutyStatusDto dto)
         {
-            var DutyTask = await _context.DutyTasks.FindAsync(id);
+            var dutyTask = await _context.DutyTasks.FindAsync(id);
 
-            if (DutyTask == null)
+            if (dutyTask == null)
             {
                 return NotFound($"Duty Task with the id: {id} was not found.");
             }
 
-            DutyTask.Status = dto.Status;
+            dutyTask.Status = dto.Status;
             await _context.SaveChangesAsync();
 
-            return Ok(MapToResponseDto(DutyTask));
-        }
-
-        private static DutyTaskResponseDto MapToResponseDto(DutyTask DutyTask)
-        {
-            return new DutyTaskResponseDto
-            {
-                Id = DutyTask.Id,
-                ParentProfileId = DutyTask.ParentProfileId,
-                AuPairProfileId = DutyTask.AuPairProfileId,
-                Title = DutyTask.Title,
-                Description = DutyTask.Description,
-                ScheduledStartTime = DutyTask.ScheduledStartTime,
-                ScheduledEndTime = DutyTask.ScheduledEndTime,
-                Status = DutyTask.Status.ToString(),
-                CreatedAt = DutyTask.CreatedAt
-            };
+            return Ok(dutyTask.ToResponseDto());
         }
     }
 }
