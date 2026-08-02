@@ -20,6 +20,7 @@ namespace AuPairGo.API.Data
         public DbSet<Schedule> Schedules { get; set; }
         public DbSet<LocationLog> LocationLogs { get; set; }
         public DbSet<DutyTask> DutyTasks { get; set; }
+        public DbSet<NotificationLog> NotificationLogs { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -230,6 +230,55 @@ namespace AuPairGo.API.Migrations
                     b.ToTable("location_logs");
                 });
 
+            modelBuilder.Entity("AuPairGo.API.Models.NotificationLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("message");
+
+                    b.Property<int>("RecipientUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<int?>("ScheduleId")
+                        .HasColumnType("int")
+                        .HasColumnName("schedule_id");
+
+                    b.Property<int>("SenderUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("sender_user_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("title");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int")
+                        .HasColumnName("notification_type");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("notification_logs");
+                });
+
             modelBuilder.Entity("AuPairGo.API.Models.ParentChildLink", b =>
                 {
                     b.Property<int>("Id")
