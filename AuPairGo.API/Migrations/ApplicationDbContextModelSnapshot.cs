@@ -99,6 +99,50 @@ namespace AuPairGo.API.Migrations
                     b.ToTable("AuPairProfiles");
                 });
 
+            modelBuilder.Entity("AuPairGo.API.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("MessageText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)")
+                        .HasColumnName("message_text");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("read_at");
+
+                    b.Property<int>("RecipientUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<int>("SenderUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("sender_user_id");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientUserId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.ToTable("chat_messages");
+                });
+
             modelBuilder.Entity("AuPairGo.API.Models.ChildProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -441,6 +485,25 @@ namespace AuPairGo.API.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AuPairGo.API.Models.ChatMessage", b =>
+                {
+                    b.HasOne("AuPairGo.API.Models.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AuPairGo.API.Models.User", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RecipientUser");
+
+                    b.Navigation("SenderUser");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ChildProfile", b =>

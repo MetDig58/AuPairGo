@@ -21,6 +21,7 @@ namespace AuPairGo.API.Data
         public DbSet<LocationLog> LocationLogs { get; set; }
         public DbSet<DutyTask> DutyTasks { get; set; }
         public DbSet<NotificationLog> NotificationLogs { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -30,6 +31,18 @@ namespace AuPairGo.API.Data
             // Global Query Filter: Automatically exclude soft-deleted children from ALL queries
             modelBuilder.Entity<ChildProfile>()
                 .HasQueryFilter(c => !c.IsDeleted);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(message => message.SenderUser)
+                .WithMany()
+                .HasForeignKey(message => message.SenderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(message => message.RecipientUser)
+                .WithMany()
+                .HasForeignKey(message => message.RecipientUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
