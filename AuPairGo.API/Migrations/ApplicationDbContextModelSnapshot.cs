@@ -154,6 +154,9 @@ namespace AuPairGo.API.Migrations
                     b.Property<int>("AuPairProfileId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ChildProfileId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -182,6 +185,8 @@ namespace AuPairGo.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuPairProfileId");
+
+                    b.HasIndex("ChildProfileId");
 
                     b.HasIndex("ParentProfileId");
 
@@ -457,6 +462,10 @@ namespace AuPairGo.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AuPairGo.API.Models.ChildProfile", "ChildProfile")
+                        .WithMany()
+                        .HasForeignKey("ChildProfileId");
+
                     b.HasOne("AuPairGo.API.Models.ParentProfile", "ParentProfile")
                         .WithMany()
                         .HasForeignKey("ParentProfileId")
@@ -464,6 +473,8 @@ namespace AuPairGo.API.Migrations
                         .IsRequired();
 
                     b.Navigation("AuPairProfile");
+
+                    b.Navigation("ChildProfile");
 
                     b.Navigation("ParentProfile");
                 });

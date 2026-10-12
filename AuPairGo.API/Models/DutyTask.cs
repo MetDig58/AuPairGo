@@ -20,7 +20,7 @@ namespace AuPairGo.API.Models
         [ForeignKey("AuPairProfileId")]
         public AuPairProfile? AuPairProfile { get; set; }
 
-        public int ChildProfileId { get; set; }
+        public int? ChildProfileId { get; set; }
 
         [ForeignKey("ChildProfileId")]
         public ChildProfile? ChildProfile { get; set; }
