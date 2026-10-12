@@ -5,6 +5,7 @@ namespace AuPairGo.API.DTOs
         public int Id { get; set; }
         public int ParentProfileId { get; set; }
         public int AuPairProfileId { get; set; }
+        public int? ChildProfileId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public DateTime ScheduledStartTime { get; set; }

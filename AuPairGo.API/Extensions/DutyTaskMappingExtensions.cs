@@ -12,6 +12,7 @@ namespace AuPairGo.API.Extensions
                 Id = task.Id,
                 ParentProfileId = task.ParentProfileId,
                 AuPairProfileId = task.AuPairProfileId,
+                ChildProfileId = task.ChildProfileId,
                 Title = task.Title,
                 Description = task.Description,
                 ScheduledStartTime = task.ScheduledStartTime,

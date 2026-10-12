@@ -39,10 +39,32 @@ namespace AuPairGo.API.Controllers
                 return NotFound($"Au Pair profile with ID {dto.AuPairProfileId} was not found.");
             }
 
+            var childBelongsToParent = await _context.ChildProfiles
+            .Join(
+            _context.ParentProfiles,
+            child => child.UserId,
+            parent => parent.UserId,
+            (child, parent) => new
+            {
+                ChildId = child.Id,
+                ParentProfileId = parent.Id
+            })
+            .AnyAsync(x =>
+                x.ChildId == dto.ChildProfileId &&
+                x.ParentProfileId == dto.ParentProfileId);
+
+            if (!childBelongsToParent)
+            {
+                return BadRequest(
+                    $"Child profile with ID {dto.ChildProfileId} does not belong to parent profile ID {dto.ParentProfileId}.");
+            }
+
+
             var dutyTask = new DutyTask
             {
                 ParentProfileId = dto.ParentProfileId,
                 AuPairProfileId = dto.AuPairProfileId,
+                ChildProfileId = dto.ChildProfileId,
                 Title = dto.Title,
                 Description = dto.Description,
                 ScheduledStartTime = dto.ScheduledStartTime,

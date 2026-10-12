@@ -20,6 +20,12 @@ namespace AuPairGo.API.Models
         [ForeignKey("AuPairProfileId")]
         public AuPairProfile? AuPairProfile { get; set; }
 
+        public int ChildProfileId { get; set; }
+
+        [ForeignKey("ChildProfileId")]
+        public ChildProfile? ChildProfile { get; set; }
+
+
         [Required]
         [MaxLength(150)]
         public string Title { get; set; } = string.Empty;

@@ -9,6 +9,8 @@ namespace AuPairGo.API.DTOs
 
         [Required(ErrorMessage = "AuPairProfileId is required.")]
         public int AuPairProfileId { get; set; }
+        [Required(ErrorMessage = "ChildProfileId is required.")]
+        public int ChildProfileId { get; set; }
 
         [Required(ErrorMessage = "Title is required.")]
         [StringLength(150, ErrorMessage = "Title cannot exceed 150 characters.")]
