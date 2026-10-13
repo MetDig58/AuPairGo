@@ -3,6 +3,10 @@ using AuPairGo.API.Data;
 using AuPairGo.API.Models;
 using AuPairGo.API.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace AuPairGo.API.Controllers
 {
@@ -11,10 +15,12 @@ namespace AuPairGo.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(ApplicationDbContext context)
+        public AuthController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
@@ -108,6 +114,7 @@ namespace AuPairGo.API.Controllers
             {
                 return Unauthorized("Invalid email or password.");
             }
+            var token = GenerateJwtToken(userRecord);
 
             // 3. Fetch profile based on role
             object? profileData = null;
@@ -150,6 +157,7 @@ namespace AuPairGo.API.Controllers
             // 4. Return user and profile details
             return Ok(new
             {
+                Token = token,
                 userRecord.Id,
                 userRecord.Email,
                 userRecord.FirstName,
@@ -159,6 +167,35 @@ namespace AuPairGo.API.Controllers
                 userRecord.Role,
                 Profile = profileData
             });
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var jwtKey = _configuration["Jwt:Key"];
+            var issuer = _configuration["Jwt:Issuer"];
+            var audience = _configuration["Jwt:Audience"];
+
+            if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+            {
+                throw new InvalidOperationException("JWT configuration is incomplete. Configure Jwt:Key, Jwt:Issuer and Jwt:Audience.");
+            }
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var expiryMinutes = _configuration.GetValue<int>("Jwt:ExpiryMinutes");
+
+            var token = new JwtSecurityToken(issuer: issuer, audience: audience, claims: claims, expires: DateTime.UtcNow.AddMinutes(expiryMinutes), signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
