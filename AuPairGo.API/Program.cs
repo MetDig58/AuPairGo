@@ -13,7 +13,7 @@ builder.Services.AddDbContext<AuPairGo.API.Data.ApplicationDbContext>(options =>
 
 // 2. Tell .NET to discover your Controllers folder
 builder.Services.AddControllers();
-var jwtKey = builder.Configuration["jwtKey"];
+var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey))
 {
