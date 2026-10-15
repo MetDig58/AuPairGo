@@ -3,6 +3,7 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +48,40 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // 3. Keep the OpenAPI generation tool active
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        var components = document.Components ??= new OpenApiComponents();
+
+        components.SecuritySchemes ??=
+            new Dictionary<string, IOpenApiSecurityScheme>();
+
+        components.SecuritySchemes["Bearer"] =
+            new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter your JWT token."
+            };
+
+        document.Security ??= new List<OpenApiSecurityRequirement>();
+
+        document.Security.Add(
+            new OpenApiSecurityRequirement
+            {
+                [
+                    new OpenApiSecuritySchemeReference(
+                        "Bearer",
+                        document,
+                        null)
+                ] = new List<string>()
+            });
+
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
