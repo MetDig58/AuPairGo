@@ -5,6 +5,7 @@ using AuPairGo.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace AuPairGo.API.Controllers
 {
@@ -23,14 +24,19 @@ namespace AuPairGo.API.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageDto dto)
         {
-            if (dto.SenderUserId == dto.RecipientUserId)
+            if (!TryGetAuthenticatedUserId(out var senderUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (senderUserId == dto.RecipientUserId)
             {
                 return BadRequest("A user cannot send a message to themselves.");
             }
 
             var users = await _context.Users
                 .AsNoTracking()
-                .Where(user => user.Id == dto.SenderUserId ||
+                .Where(user => user.Id == senderUserId ||
                                user.Id == dto.RecipientUserId)
                 .Select(user => new
                 {
@@ -39,7 +45,7 @@ namespace AuPairGo.API.Controllers
                 })
                 .ToListAsync();
 
-            var sender = users.FirstOrDefault(user => user.Id == dto.SenderUserId);
+            var sender = users.FirstOrDefault(user => user.Id == senderUserId);
             var recipient = users.FirstOrDefault(user => user.Id == dto.RecipientUserId);
 
             if (sender == null || recipient == null)
@@ -48,19 +54,20 @@ namespace AuPairGo.API.Controllers
             }
 
             var canMessage = await CanUsersMessageAsync(
-                dto.SenderUserId,
+                senderUserId,
                 sender.Role,
                 dto.RecipientUserId,
                 recipient.Role);
 
             if (!canMessage)
             {
-                return Forbid("These users are not permitted to message each other.");
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    "These users are not permitted to message each other.");
             }
 
             var message = new ChatMessage
             {
-                SenderUserId = dto.SenderUserId,
+                SenderUserId = senderUserId,
                 RecipientUserId = dto.RecipientUserId,
                 MessageText = dto.MessageText.Trim(),
                 SentAt = DateTime.UtcNow,
@@ -116,6 +123,18 @@ namespace AuPairGo.API.Controllers
         [HttpGet("conversation/{user1Id}/{user2Id}")]
         public async Task<IActionResult> GetConversations(int user1Id, int user2Id)
         {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != user1Id && authenticatedUserId != user2Id)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view conversations that include your account.");
+            }
+
             if (user1Id == user2Id)
             {
                 return BadRequest("A conversation requires 2 different users.");
@@ -147,7 +166,7 @@ namespace AuPairGo.API.Controllers
 
             if (!canMessage)
             {
-                return Forbid("These users are not allowed to message each other.");
+                return StatusCode(StatusCodes.Status403Forbidden, "These users are not allowed to message each other.");
             }
 
             var messages = await _context.ChatMessages
@@ -168,6 +187,23 @@ namespace AuPairGo.API.Controllers
         {
             var message = await _context.ChatMessages
             .FirstOrDefaultAsync(message => message.Id == id);
+
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (message == null)
+            {
+                return NotFound($"Message with ID {id} was not found.");
+            }
+
+            if (message.RecipientUserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the message recipient can mark it as read.");
+            }
 
             if (message == null)
             {
@@ -190,6 +226,18 @@ namespace AuPairGo.API.Controllers
         [HttpGet("recent/{userId}")]
         public async Task<IActionResult> GetRecentConversations(int userId)
         {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != userId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view your own recent conversations.");
+            }
+
             var userExists = await _context.Users
             .AsNoTracking()
             .AnyAsync(user => user.Id == userId);
@@ -256,6 +304,13 @@ namespace AuPairGo.API.Controllers
             .ToList();
 
             return Ok(response);
+        }
+
+        private bool TryGetAuthenticatedUserId(out int userId)
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return int.TryParse(userIdValue, out userId);
         }
     }
 }

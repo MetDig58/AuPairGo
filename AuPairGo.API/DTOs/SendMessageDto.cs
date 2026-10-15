@@ -4,9 +4,6 @@ namespace AuPairGo.API.DTOs
 {
     public class SendMessageDto
     {
-        [Required(ErrorMessage = "SenderUserId is required.")]
-        public int SenderUserId { get; set; }
-
         [Required(ErrorMessage = "RecipientUserId is required.")]
         public int RecipientUserId { get; set; }
 
