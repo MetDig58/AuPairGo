@@ -4,11 +4,13 @@ using AuPairGo.API.Extensions;
 using AuPairGo.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AuPairGo.API.Controllers
 {
     [ApiController]
     [Route("api/messages")]
+    [Authorize]
     public class MessagesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
