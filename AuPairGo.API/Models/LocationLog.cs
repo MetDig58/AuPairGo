@@ -11,16 +11,8 @@ namespace AuPairGo.API.Models
         public int Id { get; set; }
 
         [Required]
-        [Column("schedule_id")]
-        public int ScheduleId { get; set; }
-
-        [Required]
-        [Column("au_pair_id")]
-        public int AuPairId { get; set; }
-
-        [Required]
-        [Column("parent_id")]
-        public int ParentId { get; set; }
+        [Column("duty_task_id")]
+        public int DutyTaskId { get; set; }
 
         [Column("child_id")]
         public int? ChildId { get; set; }

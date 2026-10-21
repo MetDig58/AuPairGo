@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using AuPairGo.API.Data;
 using AuPairGo.API.Models;
 using AuPairGo.API.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace AuPairGo.API.Controllers
 {
     [ApiController]
     [Route("Api/[controller]")]
+    [Authorize]
     public class AuPairsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -21,7 +24,21 @@ namespace AuPairGo.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAuPairProfile([FromBody] CreateAuPairProfileDto dto)
         {
-            var user = await _context.Users.FindAsync(dto.UserId);
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != dto.UserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only create a profile for your own account.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == dto.UserId && user.Role == "AuPair");
             if (user == null)
             {
                 return NotFound($"User with ID {dto.UserId} does not exist.");
@@ -112,6 +129,20 @@ namespace AuPairGo.API.Controllers
             if (AuPair == null)
             {
                 return NotFound($"Au Pair Profile with id {id} was not found.");
+            }
+
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (AuPair.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only update your own au-pair profile.");
             }
 
             AuPair.Bio = dto.Bio;

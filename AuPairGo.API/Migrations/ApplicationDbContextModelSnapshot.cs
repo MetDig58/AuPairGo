@@ -246,13 +246,13 @@ namespace AuPairGo.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AuPairId")
-                        .HasColumnType("int")
-                        .HasColumnName("au_pair_id");
-
                     b.Property<int?>("ChildId")
                         .HasColumnType("int")
                         .HasColumnName("child_id");
+
+                    b.Property<int>("DutyTaskId")
+                        .HasColumnType("int")
+                        .HasColumnName("duty_task_id");
 
                     b.Property<double>("Latitude")
                         .HasColumnType("double")
@@ -261,14 +261,6 @@ namespace AuPairGo.API.Migrations
                     b.Property<double>("Longitude")
                         .HasColumnType("double")
                         .HasColumnName("longitude");
-
-                    b.Property<int>("ParentId")
-                        .HasColumnType("int")
-                        .HasColumnName("parent_id");
-
-                    b.Property<int>("ScheduleId")
-                        .HasColumnType("int")
-                        .HasColumnName("schedule_id");
 
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("datetime(6)")

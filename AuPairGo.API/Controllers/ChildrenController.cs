@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using AuPairGo.API.DTOs;
 using AuPairGo.API.Data;
 using AuPairGo.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace AuPairGo.API.Controllers
 {
     [ApiController]
     [Route("api/parents/{ParentId}/children")]
+    [Authorize]
     public class ChildrenController : ControllerBase
     {
         public readonly ApplicationDbContext _context;
@@ -21,6 +24,20 @@ namespace AuPairGo.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateChildProfile(int ParentId, [FromBody] CreateChildProfileDto dto)
         {
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != ParentId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only create children for your own parent account.");
+            }
+
             // Verify parent exists and has Parent role
             var parentUser = await _context.Users
                 .FirstOrDefaultAsync(user => user.Id == ParentId && user.Role == "Parent");
@@ -61,6 +78,20 @@ namespace AuPairGo.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetChildrenByParent(int ParentId)
         {
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != ParentId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view children belonging to your own account.");
+            }
+
             var children = await _context.ChildProfiles
                 .Where(child => child.UserId == ParentId && !child.IsDeleted) // Included !IsDeleted
                 .Select(child => new ChildProfileResponseDto
@@ -82,6 +113,20 @@ namespace AuPairGo.API.Controllers
         [HttpGet("{ChildId}")]
         public async Task<IActionResult> GetChildById(int ParentId, int ChildId)
         {
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != ParentId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view children belonging to your own account.");
+            }
+
             var child = await _context.ChildProfiles
                 .Where(child => child.Id == ChildId && child.UserId == ParentId && !child.IsDeleted)
                 .Select(child => new ChildProfileResponseDto
@@ -108,6 +153,20 @@ namespace AuPairGo.API.Controllers
         [HttpPut("{ChildId}")]
         public async Task<IActionResult> UpdateChildProfile(int ParentId, int ChildId, [FromBody] UpdateChildProfileDto dto)
         {
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != ParentId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only modify children belonging to your own account.");
+            }
+
             var child = await _context.ChildProfiles
                 .FirstOrDefaultAsync(c => c.Id == ChildId && c.UserId == ParentId && !c.IsDeleted);
 
@@ -152,6 +211,20 @@ namespace AuPairGo.API.Controllers
         [HttpDelete("{ChildId}")]
         public async Task<IActionResult> DeleteChild(int ParentId, int ChildId)
         {
+            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            {
+                return Unauthorized("The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId != ParentId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only modify children belonging to your own account.");
+            }
+
             var child = await _context.ChildProfiles
                 .FirstOrDefaultAsync(c => c.Id == ChildId && c.UserId == ParentId && !c.IsDeleted);
 

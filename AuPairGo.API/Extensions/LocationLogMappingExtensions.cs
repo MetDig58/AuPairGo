@@ -10,9 +10,7 @@ namespace AuPairGo.API.Extensions
             return new LocationLogResponseDto
             {
                 Id = log.Id,
-                ScheduleId = log.ScheduleId,
-                AuPairId = log.AuPairId,
-                ParentId = log.ParentId,
+                DutyTaskId = log.DutyTaskId,
                 ChildId = log.ChildId,
                 Latitude = log.Latitude,
                 Longitude = log.Longitude,
