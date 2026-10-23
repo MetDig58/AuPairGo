@@ -2,13 +2,16 @@ using AuPairGo.API.Data;
 using AuPairGo.API.DTOs;
 using AuPairGo.API.Extensions;
 using AuPairGo.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace AuPairGo.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class NotificationsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -18,99 +21,195 @@ namespace AuPairGo.API.Controllers
             _context = context;
         }
 
-        //POST: api/notifications/sos
-        [HttpPost("sos")]
-        public async Task<IActionResult> SendSosAlert([FromBody] SendSosAlertDto dto)
+        private bool TryGetAuthenticatedUserId(out int userId)
         {
-            var SosMessage = dto.Message;
-            if (dto.CurrentLatitude.HasValue && dto.CurrentLongitude.HasValue)
+            var userIdValue =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return int.TryParse(userIdValue, out userId);
+        }
+
+        [HttpPost("sos")]
+        public async Task<IActionResult> SendSosAlert(
+            [FromBody] SendSosAlertDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
             {
-                SosMessage += $" [GPS: {dto.CurrentLatitude.Value}, {dto.CurrentLongitude.Value}]";
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
             }
 
-            var Notification = new NotificationLog
+            if (authenticatedUserId == dto.RecipientUserId)
             {
-                SenderUserId = dto.SenderUserId,
+                return BadRequest(
+                    "A user cannot send an SOS notification to themselves.");
+            }
+
+            var recipientExists = await _context.Users
+                .AsNoTracking()
+                .AnyAsync(user => user.Id == dto.RecipientUserId);
+
+            if (!recipientExists)
+            {
+                return NotFound(
+                    $"User with ID {dto.RecipientUserId} was not found.");
+            }
+
+            var sosMessage = dto.Message;
+
+            if (dto.CurrentLatitude.HasValue &&
+                dto.CurrentLongitude.HasValue)
+            {
+                sosMessage +=
+                    $" [GPS: {dto.CurrentLatitude.Value}, " +
+                    $"{dto.CurrentLongitude.Value}]";
+            }
+
+            var notification = new NotificationLog
+            {
+                SenderUserId = authenticatedUserId,
                 RecipientUserId = dto.RecipientUserId,
                 ScheduleId = dto.ScheduleId,
-                Title = "🚨 EMERGENCY SOS ALERT",
-                Message = SosMessage,
+                Title = "EMERGENCY SOS ALERT",
+                Message = sosMessage,
                 Type = NotificationType.SosAlert,
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.NotificationLogs.Add(Notification);
+            _context.NotificationLogs.Add(notification);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
                 nameof(GetUserNotifications),
-                new { userId = Notification.RecipientUserId },
-                Notification.ToResponseDto()
-            );
+                new { userId = notification.RecipientUserId },
+                notification.ToResponseDto());
         }
 
-        // POST: api/notifications 
         [HttpPost]
-        public async Task<IActionResult> SendNotification([FromBody] SendNotificationDto dto)
+        public async Task<IActionResult> SendNotification(
+            [FromBody] SendNotificationDto dto)
         {
-            var Notification = new NotificationLog
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
             {
-                SenderUserId = dto.SenderUserId,
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            if (authenticatedUserId == dto.RecipientUserId)
+            {
+                return BadRequest(
+                    "A user cannot send a notification to themselves.");
+            }
+
+            var recipientExists = await _context.Users
+                .AsNoTracking()
+                .AnyAsync(user => user.Id == dto.RecipientUserId);
+
+            if (!recipientExists)
+            {
+                return NotFound(
+                    $"User with ID {dto.RecipientUserId} was not found.");
+            }
+
+            var notification = new NotificationLog
+            {
+                SenderUserId = authenticatedUserId,
                 RecipientUserId = dto.RecipientUserId,
                 ScheduleId = dto.ScheduleId,
-                Title = dto.Title,
-                Message = dto.Message,
+                Title = dto.Title.Trim(),
+                Message = dto.Message.Trim(),
                 Type = dto.Type,
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.NotificationLogs.Add(Notification);
+            _context.NotificationLogs.Add(notification);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
                 nameof(GetUserNotifications),
-                new { userId = Notification.RecipientUserId },
-                Notification.ToResponseDto()
-            );
+                new { userId = notification.RecipientUserId },
+                notification.ToResponseDto());
         }
 
-        //GET: api/notifications/user/{userId}
         [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetUserNotifications(int UserId, [FromQuery] bool UnreadOnly = false)
+        public async Task<IActionResult> GetUserNotifications(
+            int userId,
+            [FromQuery] bool unreadOnly = false)
         {
-            var Query = _context.NotificationLogs
-                .AsNoTracking()
-                .Where(Notifications => Notifications.RecipientUserId == UserId);
-
-            if (UnreadOnly)
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
             {
-                Query = Query.Where(Notifications => !Notifications.IsRead);
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
             }
 
-            var Notifications = await Query
-                .OrderByDescending(Notifications => Notifications.CreatedAt)
-                .Select(Notifications => Notifications.ToResponseDto())
+            if (authenticatedUserId != userId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view your own notifications.");
+            }
+
+            var query = _context.NotificationLogs
+                .AsNoTracking()
+                .Where(notification =>
+                    notification.RecipientUserId == authenticatedUserId);
+
+            if (unreadOnly)
+            {
+                query = query.Where(notification =>
+                    !notification.IsRead);
+            }
+
+            var notifications = await query
+                .OrderByDescending(notification =>
+                    notification.CreatedAt)
                 .ToListAsync();
 
-            return Ok(Notifications);
+            return Ok(notifications
+                .Select(notification =>
+                    notification.ToResponseDto())
+                .ToList());
         }
 
-        //PATCH: api/notifications/{id}/read
         [HttpPatch("{id}/read")]
-        public async Task<IActionResult> MarkAsRead(int Id)
+        public async Task<IActionResult> MarkAsRead(int id)
         {
-            var Notification = await _context.NotificationLogs.FindAsync(Id);
-            if (Notification == null)
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
             {
-                return NotFound($"Notification with ID {Id} was not found.");
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
             }
 
-            Notification.IsRead = true;
-            await _context.SaveChangesAsync();
+            var notification = await _context.NotificationLogs
+                .FirstOrDefaultAsync(notification =>
+                    notification.Id == id);
 
-            return Ok(Notification.ToResponseDto());
+            if (notification == null)
+            {
+                return NotFound(
+                    $"Notification with ID {id} was not found.");
+            }
+
+            if (notification.RecipientUserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the notification recipient can mark it as read.");
+            }
+
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(notification.ToResponseDto());
         }
     }
 }
