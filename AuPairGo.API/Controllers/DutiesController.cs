@@ -50,6 +50,20 @@ namespace AuPairGo.API.Controllers
                     "You can only create duties for your own parent profile.");
             }
 
+            var addressesExist = await _context.Addresses.AsNoTracking().Where(address => address.Id == dto.PickupAddressId || address.Id == dto.DropOffAddressId).Select(address => address.Id).ToListAsync();
+
+            if (!addressesExist.Contains(dto.PickupAddressId))
+            {
+                return NotFound(
+                    $"Pickup address with ID {dto.PickupAddressId} was not found.");
+            }
+
+            if (!addressesExist.Contains(dto.DropOffAddressId))
+            {
+                return NotFound(
+                    $"Drop-off address with ID {dto.DropOffAddressId} was not found.");
+            }
+
             var auPairExists = await _context.AuPairProfiles.AnyAsync(a => a.Id == dto.AuPairProfileId);
             if (!auPairExists)
             {
@@ -82,6 +96,8 @@ namespace AuPairGo.API.Controllers
                 ParentProfileId = dto.ParentProfileId,
                 AuPairProfileId = dto.AuPairProfileId,
                 ChildProfileId = dto.ChildProfileId,
+                PickupAddressId = dto.PickupAddressId,
+                DropOffAddressId = dto.DropOffAddressId,
                 Title = dto.Title,
                 Description = dto.Description,
                 ScheduledStartTime = dto.ScheduledStartTime,
@@ -98,6 +114,82 @@ namespace AuPairGo.API.Controllers
                 new { auPairId = dutyTask.AuPairProfileId },
                 dutyTask.ToResponseDto()
             );
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetDutyById(int id)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .AsNoTracking()
+                .Include(duty => duty.ParentProfile)
+                .Include(duty => duty.AuPairProfile)
+                .FirstOrDefaultAsync(duty => duty.Id == id);
+
+            if (dutyTask == null)
+            {
+                return NotFound($"Duty task with ID {id} was not found.");
+            }
+
+            var isParent =
+                dutyTask.ParentProfile?.UserId == authenticatedUserId;
+
+            var isAuPair =
+                dutyTask.AuPairProfile?.UserId == authenticatedUserId;
+
+            if (!isParent && !isAuPair)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view duties connected to your account.");
+            }
+
+            return Ok(dutyTask.ToResponseDto());
+        }
+
+        [HttpGet("parent/{parentProfileId}")]
+        public async Task<IActionResult> GetDutiesForParent(
+    int parentProfileId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var parent = await _context.ParentProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(parent =>
+                    parent.Id == parentProfileId);
+
+            if (parent == null)
+            {
+                return NotFound(
+                    $"Parent profile with ID {parentProfileId} was not found.");
+            }
+
+            if (parent.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "You can only view duties for your own parent profile.");
+            }
+
+            var duties = await _context.DutyTasks
+                .AsNoTracking()
+                .Where(duty =>
+                    duty.ParentProfileId == parentProfileId)
+                .OrderBy(duty => duty.ScheduledStartTime)
+                .ToListAsync();
+
+            return Ok(duties
+                .Select(duty => duty.ToResponseDto())
+                .ToList());
         }
 
         // GET: api/duties/aupair/{auPairId}

@@ -22,34 +22,37 @@ namespace AuPairGo.API.Controllers
 
         // POST: api/parents/{ParentId}/children
         [HttpPost]
-        public async Task<IActionResult> CreateChildProfile(int ParentId, [FromBody] CreateChildProfileDto dto)
+        public async Task<IActionResult> CreateChildProfile(
+            int ParentId,
+            [FromBody] CreateChildProfileDto dto)
         {
-            var authenticatedUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var authenticatedUserIdValue =
+                User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (!int.TryParse(authenticatedUserIdValue, out var authenticatedUserId))
+            if (!int.TryParse(
+                    authenticatedUserIdValue,
+                    out var authenticatedUserId))
             {
-                return Unauthorized("The authenticated user ID is missing or invalid.");
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
             }
 
-            if (authenticatedUserId != ParentId)
+            var parentProfile = await _context.ParentProfiles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(parent =>
+                    parent.Id == ParentId &&
+                    parent.UserId == authenticatedUserId);
+
+            if (parentProfile == null)
             {
                 return StatusCode(
                     StatusCodes.Status403Forbidden,
-                    "You can only create children for your own parent account.");
-            }
-
-            // Verify parent exists and has Parent role
-            var parentUser = await _context.Users
-                .FirstOrDefaultAsync(user => user.Id == ParentId && user.Role == "Parent");
-
-            if (parentUser == null)
-            {
-                return BadRequest("Specified parent account was not found or invalid.");
+                    "You can only create children for your own parent profile.");
             }
 
             var child = new ChildProfile
             {
-                UserId = ParentId,
+                UserId = parentProfile.UserId,
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Allergies = dto.Allergies,
@@ -71,7 +74,10 @@ namespace AuPairGo.API.Controllers
                 SpecialInstructions = child.SpecialInstructions
             };
 
-            return CreatedAtAction(nameof(GetChildById), new { ParentId, ChildId = child.Id }, response);
+            return CreatedAtAction(
+                nameof(GetChildById),
+                new { ParentId, ChildId = child.Id },
+                response);
         }
 
         // GET: api/parents/{ParentId}/children

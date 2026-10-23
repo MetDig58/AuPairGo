@@ -17,7 +17,6 @@ namespace AuPairGo.API.Data
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Status> Statuses { get; set; }
         public DbSet<ParentChildLink> ParentChildLinks { get; set; }
-        public DbSet<Schedule> Schedules { get; set; }
         public DbSet<LocationLog> LocationLogs { get; set; }
         public DbSet<DutyTask> DutyTasks { get; set; }
         public DbSet<NotificationLog> NotificationLogs { get; set; }

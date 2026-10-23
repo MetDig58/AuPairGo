@@ -209,7 +209,13 @@ namespace AuPairGo.API.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<int>("DropOffAddressId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ParentProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PickupAddressId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("ScheduledEndTime")
@@ -232,7 +238,11 @@ namespace AuPairGo.API.Migrations
 
                     b.HasIndex("ChildProfileId");
 
+                    b.HasIndex("DropOffAddressId");
+
                     b.HasIndex("ParentProfileId");
+
+                    b.HasIndex("PickupAddressId");
 
                     b.ToTable("DutyTasks");
                 });
@@ -375,40 +385,6 @@ namespace AuPairGo.API.Migrations
                     b.ToTable("ParentProfiles");
                 });
 
-            modelBuilder.Entity("AuPairGo.API.Models.Schedule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChildId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DropOffAddressId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ExpectedDropOffTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("ParentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PickupAddressId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("PickupTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("StatusId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Schedules");
-                });
-
             modelBuilder.Entity("AuPairGo.API.Models.Status", b =>
                 {
                     b.Property<int>("Id")
@@ -521,9 +497,21 @@ namespace AuPairGo.API.Migrations
                         .WithMany()
                         .HasForeignKey("ChildProfileId");
 
+                    b.HasOne("AuPairGo.API.Models.Address", "DropOffAddress")
+                        .WithMany()
+                        .HasForeignKey("DropOffAddressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AuPairGo.API.Models.ParentProfile", "ParentProfile")
                         .WithMany()
                         .HasForeignKey("ParentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AuPairGo.API.Models.Address", "PickupAddress")
+                        .WithMany()
+                        .HasForeignKey("PickupAddressId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -531,7 +519,11 @@ namespace AuPairGo.API.Migrations
 
                     b.Navigation("ChildProfile");
 
+                    b.Navigation("DropOffAddress");
+
                     b.Navigation("ParentProfile");
+
+                    b.Navigation("PickupAddress");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.ParentProfile", b =>

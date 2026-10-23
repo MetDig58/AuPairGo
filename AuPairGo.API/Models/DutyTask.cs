@@ -25,6 +25,17 @@ namespace AuPairGo.API.Models
         [ForeignKey("ChildProfileId")]
         public ChildProfile? ChildProfile { get; set; }
 
+        [Required]
+        public int PickupAddressId { get; set; }
+
+        [ForeignKey("PickupAddressId")]
+        public Address? PickupAddress { get; set; }
+
+        [Required]
+        public int DropOffAddressId { get; set; }
+
+        [ForeignKey("DropOffAddressId")]
+        public Address? DropOffAddress { get; set; }
 
         [Required]
         [MaxLength(150)]

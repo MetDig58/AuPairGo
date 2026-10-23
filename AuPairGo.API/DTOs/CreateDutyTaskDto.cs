@@ -12,6 +12,12 @@ namespace AuPairGo.API.DTOs
         [Required(ErrorMessage = "ChildProfileId is required.")]
         public int ChildProfileId { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "PickupAddressId is required.")]
+        public int PickupAddressId { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "DropOffAddressId is required.")]
+        public int DropOffAddressId { get; set; }
+
         [Required(ErrorMessage = "Title is required.")]
         [StringLength(150, ErrorMessage = "Title cannot exceed 150 characters.")]
         public string Title { get; set; } = string.Empty;
