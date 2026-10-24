@@ -50,18 +50,25 @@ namespace AuPairGo.API.Controllers
                     "You can only create duties for your own parent profile.");
             }
 
-            var addressesExist = await _context.Addresses.AsNoTracking().Where(address => address.Id == dto.PickupAddressId || address.Id == dto.DropOffAddressId).Select(address => address.Id).ToListAsync();
+            var addressesBelongToParent = await _context.Addresses
+                .AsNoTracking()
+                .Where(address =>
+                 address.ParentProfileId == parent.Id &&
+                (address.Id == dto.PickupAddressId ||
+                 address.Id == dto.DropOffAddressId))
+                .Select(address => address.Id)
+                .ToListAsync();
 
-            if (!addressesExist.Contains(dto.PickupAddressId))
+            if (!addressesBelongToParent.Contains(dto.PickupAddressId))
             {
-                return NotFound(
-                    $"Pickup address with ID {dto.PickupAddressId} was not found.");
+                return BadRequest(
+                    "The pickup address does not belong to this parent.");
             }
 
-            if (!addressesExist.Contains(dto.DropOffAddressId))
+            if (!addressesBelongToParent.Contains(dto.DropOffAddressId))
             {
-                return NotFound(
-                    $"Drop-off address with ID {dto.DropOffAddressId} was not found.");
+                return BadRequest(
+                    "The drop-off address does not belong to this parent.");
             }
 
             var auPairExists = await _context.AuPairProfiles.AnyAsync(a => a.Id == dto.AuPairProfileId);
@@ -244,6 +251,124 @@ namespace AuPairGo.API.Controllers
                 .ToListAsync();
 
             return Ok(duties.Select(duty => duty.ToResponseDto()).ToList());
+        }
+
+        // PUT: api/duties/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateDutyTask(int id, [FromBody] UpdateDutyTaskDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            if (dto.ScheduledEndTime.HasValue &&
+                dto.ScheduledEndTime <= dto.ScheduledStartTime)
+            {
+                return BadRequest(
+                    "ScheduledEndTime must be after ScheduledStartTime.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.ParentProfile)
+                .FirstOrDefaultAsync(duty => duty.Id == id);
+
+            if (dutyTask == null)
+            {
+                return NotFound($"Duty task with ID {id} was not found.");
+            }
+
+            if (dutyTask.ParentProfile?.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the parent who created the duty can update it.");
+            }
+
+            var addressesBelongToParent = await _context.Addresses
+                .AsNoTracking()
+                .Where(address =>
+                address.ParentProfileId == dutyTask.ParentProfileId &&
+                (address.Id == dto.PickupAddressId || address.Id == dto.DropOffAddressId))
+                .Select(address => address.Id)
+                .ToListAsync();
+
+            if (!addressesBelongToParent.Contains(dto.PickupAddressId))
+            {
+                return BadRequest(
+                    "The pickup address does not belong to this parent.");
+            }
+
+            if (!addressesBelongToParent.Contains(dto.DropOffAddressId))
+            {
+                return BadRequest(
+                    "The drop-off address does not belong to this parent.");
+            }
+
+            var childBelongsToParent = await _context.ChildProfiles
+                .Join(
+                    _context.ParentProfiles,
+                    child => child.UserId,
+                    parent => parent.UserId,
+                    (child, parent) => new
+                    {
+                        ChildId = child.Id,
+                        ParentProfileId = parent.Id
+                    })
+                .AnyAsync(link =>
+                    link.ChildId == dto.ChildProfileId &&
+                    link.ParentProfileId == dutyTask.ParentProfileId);
+
+            if (!childBelongsToParent)
+            {
+                return BadRequest(
+                    $"Child profile with ID {dto.ChildProfileId} does not belong to this parent.");
+            }
+
+            dutyTask.ChildProfileId = dto.ChildProfileId;
+            dutyTask.PickupAddressId = dto.PickupAddressId;
+            dutyTask.DropOffAddressId = dto.DropOffAddressId;
+            dutyTask.Title = dto.Title;
+            dutyTask.Description = dto.Description;
+            dutyTask.ScheduledStartTime = dto.ScheduledStartTime;
+            dutyTask.ScheduledEndTime = dto.ScheduledEndTime;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dutyTask.ToResponseDto());
+        }
+
+        // DELETE: api/duties/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDutyTask(int id)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.ParentProfile)
+                .FirstOrDefaultAsync(duty => duty.Id == id);
+
+            if (dutyTask == null)
+            {
+                return NotFound($"Duty task with ID {id} was not found.");
+            }
+
+            if (dutyTask.ParentProfile?.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the parent who created the duty can cancel it.");
+            }
+
+            dutyTask.Status = DutyStatus.Cancelled;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         // PATCH: api/duties/{id}/status
