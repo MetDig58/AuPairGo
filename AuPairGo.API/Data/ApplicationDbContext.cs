@@ -31,6 +31,12 @@ namespace AuPairGo.API.Data
             modelBuilder.Entity<ChildProfile>()
                 .HasQueryFilter(c => !c.IsDeleted);
 
+            modelBuilder.Entity<Address>()
+                .HasOne(address => address.ParentProfile)
+                .WithMany()
+                .HasForeignKey(address => address.ParentProfileId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<ChatMessage>()
                 .HasOne(message => message.SenderUser)
                 .WithMany()

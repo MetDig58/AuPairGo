@@ -34,6 +34,9 @@ namespace AuPairGo.API.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int?>("ParentProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("PostalCode")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -53,6 +56,8 @@ namespace AuPairGo.API.Migrations
                         .HasColumnType("double");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentProfileId");
 
                     b.ToTable("Addresses");
                 });
@@ -442,6 +447,16 @@ namespace AuPairGo.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AuPairGo.API.Models.Address", b =>
+                {
+                    b.HasOne("AuPairGo.API.Models.ParentProfile", "ParentProfile")
+                        .WithMany()
+                        .HasForeignKey("ParentProfileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ParentProfile");
                 });
 
             modelBuilder.Entity("AuPairGo.API.Models.AuPairProfile", b =>
