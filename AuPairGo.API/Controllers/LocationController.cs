@@ -29,14 +29,17 @@ namespace AuPairGo.API.Controllers
             return int.TryParse(userIdValue, out userId);
         }
 
-        private static bool IsDutyParticipant(
-            DutyTask dutyTask,
-            int authenticatedUserId)
+        private static bool IsDutyParticipant(DutyTask dutyTask, int authenticatedUserId)
         {
             return dutyTask.ParentProfile?.UserId ==
                        authenticatedUserId
                    || dutyTask.AuPairProfile?.UserId ==
                        authenticatedUserId;
+        }
+
+        private static bool IsAssignedAuPair(DutyTask dutyTask, int authenticatedUserId)
+        {
+            return dutyTask.AuPairProfile?.UserId == authenticatedUserId;
         }
 
         [HttpPost("logs")]
@@ -63,13 +66,17 @@ namespace AuPairGo.API.Controllers
                     $"Duty task with ID {dto.DutyTaskId} was not found.");
             }
 
-            if (!IsDutyParticipant(
-                    dutyTask,
-                    authenticatedUserId))
+            if (!IsAssignedAuPair(dutyTask, authenticatedUserId))
             {
                 return StatusCode(
                     StatusCodes.Status403Forbidden,
-                    "Only the assigned parent or au pair can log location for this duty.");
+                    "Only the assigned au pair can submit location for this duty.");
+            }
+
+            if (dutyTask.Status != DutyStatus.InProgress)
+            {
+                return Conflict(
+                    "Location tracking is only allowed while the duty is in progress.");
             }
 
             var locationLog = new LocationLog
