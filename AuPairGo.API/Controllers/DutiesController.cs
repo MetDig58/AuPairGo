@@ -371,6 +371,57 @@ namespace AuPairGo.API.Controllers
             return NoContent();
         }
 
+        // POST: api/duties/{id}/check-in
+        [HttpPost("{id}/check-in")]
+        public async Task<IActionResult> CheckInToDuty(int id)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.AuPairProfile)
+                .FirstOrDefaultAsync(duty => duty.Id == id);
+
+            if (dutyTask == null)
+            {
+                return NotFound($"Duty task with ID {id} was not found.");
+            }
+
+            if (dutyTask.AuPairProfile?.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the assigned au pair can check in to this duty.");
+            }
+
+            if (dutyTask.Status == DutyStatus.Cancelled)
+            {
+                return BadRequest(
+                    "A cancelled duty cannot be checked in to.");
+            }
+
+            if (dutyTask.Status == DutyStatus.Completed)
+            {
+                return BadRequest(
+                    "A completed duty cannot be checked in to.");
+            }
+
+            if (dutyTask.Status == DutyStatus.InProgress)
+            {
+                return Conflict(
+                    "You are already checked in to this duty.");
+            }
+
+            dutyTask.Status = DutyStatus.InProgress;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dutyTask.ToResponseDto());
+        }
+
         // PATCH: api/duties/{id}/status
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateDutyStatus(int id, [FromBody] UpdateDutyStatusDto dto)
