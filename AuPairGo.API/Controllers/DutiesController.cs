@@ -422,6 +422,57 @@ namespace AuPairGo.API.Controllers
             return Ok(dutyTask.ToResponseDto());
         }
 
+        // POST: api/duties/{id}/complete
+        [HttpPost("{id}/complete")]
+        public async Task<IActionResult> CompleteDuty(int id)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.AuPairProfile)
+                .FirstOrDefaultAsync(duty => duty.Id == id);
+
+            if (dutyTask == null)
+            {
+                return NotFound($"Duty task with ID {id} was not found.");
+            }
+
+            if (dutyTask.AuPairProfile?.UserId != authenticatedUserId)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the assigned au pair can complete this duty.");
+            }
+
+            if (dutyTask.Status == DutyStatus.Cancelled)
+            {
+                return BadRequest(
+                    "A cancelled duty cannot be completed.");
+            }
+
+            if (dutyTask.Status == DutyStatus.Completed)
+            {
+                return Conflict(
+                    "This duty has already been completed.");
+            }
+
+            if (dutyTask.Status == DutyStatus.Pending)
+            {
+                return BadRequest(
+                    "The duty must be checked in before it can be completed.");
+            }
+
+            dutyTask.Status = DutyStatus.Completed;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dutyTask.ToResponseDto());
+        }
+
         // PATCH: api/duties/{id}/status
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateDutyStatus(int id, [FromBody] UpdateDutyStatusDto dto)
