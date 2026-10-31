@@ -42,9 +42,35 @@ namespace AuPairGo.API.Controllers
             return dutyTask.AuPairProfile?.UserId == authenticatedUserId;
         }
 
+        private static double CalculateDistanceInMeters(double latitude1, double longitude1, double latitude2, double longitude2)
+        {
+            const double earthRadiusInMeters = 6_371_000;
+
+            var latitude1Radians = latitude1 * Math.PI / 180;
+            var latitude2Radians = latitude2 * Math.PI / 180;
+            var latitudeDifferenceRadians =
+                (latitude2 - latitude1) * Math.PI / 180;
+            var longitudeDifferenceRadians =
+                (longitude2 - longitude1) * Math.PI / 180;
+
+            var haversine =
+                Math.Sin(latitudeDifferenceRadians / 2) *
+                Math.Sin(latitudeDifferenceRadians / 2) +
+                Math.Cos(latitude1Radians) *
+                Math.Cos(latitude2Radians) *
+                Math.Sin(longitudeDifferenceRadians / 2) *
+                Math.Sin(longitudeDifferenceRadians / 2);
+
+            var angularDistance =
+                2 * Math.Atan2(
+                    Math.Sqrt(haversine),
+                    Math.Sqrt(1 - haversine));
+
+            return earthRadiusInMeters * angularDistance;
+        }
+
         [HttpPost("logs")]
-        public async Task<IActionResult> LogLocation(
-            [FromBody] CreateLocationLogDto dto)
+        public async Task<IActionResult> LogLocation([FromBody] CreateLocationLogDto dto)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))
@@ -56,9 +82,9 @@ namespace AuPairGo.API.Controllers
             var dutyTask = await _context.DutyTasks
                 .Include(duty => duty.ParentProfile)
                 .Include(duty => duty.AuPairProfile)
-                .AsNoTracking()
+                .Include(duty => duty.PickupAddress)
                 .FirstOrDefaultAsync(duty =>
-                    duty.Id == dto.DutyTaskId);
+                        duty.Id == dto.DutyTaskId);
 
             if (dutyTask == null)
             {
@@ -89,17 +115,56 @@ namespace AuPairGo.API.Controllers
             };
 
             _context.LocationLogs.Add(locationLog);
+
+            var pickupAddress = dutyTask.PickupAddress;
+
+            if (!dutyTask.PickupArrivalNotified &&
+                pickupAddress is not null)
+            {
+                var distanceToPickup = CalculateDistanceInMeters(
+                    dto.Latitude,
+                    dto.Longitude,
+                    pickupAddress.latitude,
+                    pickupAddress.longitude);
+
+                if (distanceToPickup <= 100)
+                {
+                    var parentUserId = dutyTask.ParentProfile?.UserId;
+                    var auPairUserId = dutyTask.AuPairProfile?.UserId;
+
+                    if (parentUserId.HasValue && auPairUserId.HasValue)
+                    {
+                        var arrivalNotification = new NotificationLog
+                        {
+                            RecipientUserId = parentUserId.Value,
+                            SenderUserId = auPairUserId.Value,
+                            ScheduleId = dutyTask.Id,
+                            Title = "Au Pair has arrived",
+                            Message =
+                                $"The au pair has arrived within 100 metres of the pickup point for duty '{dutyTask.Title}'.",
+                            Type = NotificationType.PickupArrival,
+                            IsRead = false,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.NotificationLogs.Add(arrivalNotification);
+
+                        dutyTask.PickupArrivalNotified = true;
+                        dutyTask.PickupArrivalNotifiedAt = DateTime.UtcNow;
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
-                nameof(GetLocationLogsForDuty),
-                new { dutyTaskId = locationLog.DutyTaskId },
-                locationLog.ToResponseDto());
+                            nameof(GetLocationLogsForDuty),
+                            new { dutyTaskId = locationLog.DutyTaskId },
+                            locationLog.ToResponseDto());
         }
 
         [HttpGet("duties/{dutyTaskId}")]
-        public async Task<IActionResult> GetLocationLogsForDuty(
-            int dutyTaskId)
+        public async Task<IActionResult> GetLocationLogsForDuty(int dutyTaskId)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))

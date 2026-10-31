@@ -53,6 +53,10 @@ namespace AuPairGo.API.Models
         [Required]
         public DutyStatus Status { get; set; } = DutyStatus.Pending;
 
+        public bool PickupArrivalNotified { get; set; } = false;
+
+        public DateTime? PickupArrivalNotifiedAt { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -223,6 +223,12 @@ namespace AuPairGo.API.Migrations
                     b.Property<int>("PickupAddressId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("PickupArrivalNotified")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("PickupArrivalNotifiedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("ScheduledEndTime")
                         .HasColumnType("datetime(6)");
 
