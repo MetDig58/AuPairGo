@@ -258,6 +258,205 @@ namespace AuPairGo.API.Controllers
                                     locationLog.ToResponseDto());
         }
 
+        [HttpPost("logs/batch")]
+        public async Task<IActionResult> LogLocationBatch(
+    [FromBody] CreateLocationLogBatchDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            if (dto.Locations.Count > 500)
+            {
+                return BadRequest(
+                    "A maximum of 500 location points can be uploaded at once.");
+            }
+
+            var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.ParentProfile)
+                .Include(duty => duty.AuPairProfile)
+                .Include(duty => duty.PickupAddress)
+                .FirstOrDefaultAsync(duty =>
+                    duty.Id == dto.DutyTaskId);
+
+            if (dutyTask == null)
+            {
+                return NotFound(
+                    $"Duty task with ID {dto.DutyTaskId} was not found.");
+            }
+
+            if (!IsAssignedAuPair(dutyTask, authenticatedUserId))
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    "Only the assigned au pair can submit location for this duty.");
+            }
+
+            if (dutyTask.Status != DutyStatus.InProgress)
+            {
+                return Conflict(
+                    "Location tracking is only allowed while the duty is in progress.");
+            }
+
+            var orderedPoints = dto.Locations
+                .OrderBy(point => point.CapturedAt)
+                .ToList();
+
+            var locationLogs = orderedPoints
+                .Select(point => new LocationLog
+                {
+                    DutyTaskId = dutyTask.Id,
+                    ChildId = dutyTask.ChildProfileId,
+                    Latitude = point.Latitude,
+                    Longitude = point.Longitude,
+                    TimeStamp = point.CapturedAt.UtcDateTime
+                })
+                .ToList();
+
+            _context.LocationLogs.AddRange(locationLogs);
+
+            NotificationLog? arrivalNotification = null;
+
+            if (!dutyTask.PickupArrivalNotified &&
+                dutyTask.PickupAddress is not null)
+            {
+                var pickupAddress = dutyTask.PickupAddress;
+
+                var arrivedPoint = orderedPoints.FirstOrDefault(point =>
+                    CalculateDistanceInMeters(
+                        point.Latitude,
+                        point.Longitude,
+                        pickupAddress.latitude,
+                        pickupAddress.longitude) <= 100);
+
+                if (arrivedPoint is not null)
+                {
+                    var parentUserId = dutyTask.ParentProfile?.UserId;
+                    var auPairUserId = dutyTask.AuPairProfile?.UserId;
+
+                    if (parentUserId.HasValue && auPairUserId.HasValue)
+                    {
+                        arrivalNotification = new NotificationLog
+                        {
+                            RecipientUserId = parentUserId.Value,
+                            SenderUserId = auPairUserId.Value,
+                            ScheduleId = dutyTask.Id,
+                            Title = "Au Pair has arrived",
+                            Message =
+                                $"The au pair has arrived within 100 metres of the pickup point for duty '{dutyTask.Title}'.",
+                            Type = NotificationType.PickupArrival,
+                            IsRead = false,
+                            PushDeliveryStatus = PushDeliveryStatus.Pending,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.NotificationLogs.Add(arrivalNotification);
+
+                        dutyTask.PickupArrivalNotified = true;
+                        dutyTask.PickupArrivalNotifiedAt = DateTime.UtcNow;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            if (arrivalNotification != null)
+            {
+                var parentUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(user =>
+                        user.Id == arrivalNotification.RecipientUserId);
+
+                if (parentUser == null)
+                {
+                    arrivalNotification.PushDeliveryStatus =
+                        PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError =
+                        "Recipient user could not be found.";
+
+                    await _context.SaveChangesAsync();
+
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "The locations were saved, but the notification recipient could not be found.");
+                }
+
+                if (string.IsNullOrWhiteSpace(parentUser.OneSignalPlayerId))
+                {
+                    arrivalNotification.PushDeliveryStatus =
+                        PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError =
+                        "Parent user has no registered OneSignal subscription.";
+
+                    await _context.SaveChangesAsync();
+
+                    return Conflict(
+                        "The locations were saved, but the parent has no registered OneSignal device.");
+                }
+
+                try
+                {
+                    await _oneSignalService.SendPushNotificationAsync(
+                        parentUser.OneSignalPlayerId,
+                        arrivalNotification.Title,
+                        arrivalNotification.Message,
+                        arrivalNotification.Id,
+                        dutyTask.Id);
+
+                    arrivalNotification.PushDeliveryStatus =
+                        PushDeliveryStatus.Sent;
+                    arrivalNotification.PushSentAt = DateTime.UtcNow;
+                    arrivalNotification.PushError = null;
+
+                    await _context.SaveChangesAsync();
+                }
+                catch (HttpRequestException exception)
+                {
+                    arrivalNotification.PushDeliveryStatus =
+                        PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError = exception.Message;
+
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogError(
+                        exception,
+                        "Batch arrival notification {NotificationId} delivery failed.",
+                        arrivalNotification.Id);
+
+                    return StatusCode(
+                        StatusCodes.Status502BadGateway,
+                        "The locations were saved, but OneSignal delivery failed.");
+                }
+                catch (InvalidOperationException exception)
+                {
+                    arrivalNotification.PushDeliveryStatus =
+                        PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError = exception.Message;
+
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogError(
+                        exception,
+                        "Batch arrival notification {NotificationId} configuration is missing.",
+                        arrivalNotification.Id);
+
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "The locations were saved, but OneSignal is not configured.");
+                }
+            }
+
+            return Ok(new
+            {
+                dutyTaskId = dutyTask.Id,
+                acceptedCount = locationLogs.Count,
+                arrivalNotificationId = arrivalNotification?.Id
+            });
+        }
+
         [HttpGet("duties/{dutyTaskId}")]
         public async Task<IActionResult> GetLocationLogsForDuty(int dutyTaskId)
         {
