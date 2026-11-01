@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using AuPairGo.API.Services;
 
 namespace AuPairGo.API.Controllers
 {
@@ -15,10 +16,14 @@ namespace AuPairGo.API.Controllers
     public class LocationController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IOneSignalService _oneSignalService;
+        private readonly ILogger<LocationController> _logger;
 
-        public LocationController(ApplicationDbContext context)
+        public LocationController(ApplicationDbContext context, IOneSignalService oneSignalService, ILogger<LocationController> logger)
         {
             _context = context;
+            _oneSignalService = oneSignalService;
+            _logger = logger;
         }
 
         private bool TryGetAuthenticatedUserId(out int userId)

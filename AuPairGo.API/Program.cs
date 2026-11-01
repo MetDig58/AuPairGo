@@ -14,6 +14,13 @@ builder.Services.AddDbContext<AuPairGo.API.Data.ApplicationDbContext>(options =>
 
 // 2. Tell .NET to discover your Controllers folder
 builder.Services.AddControllers();
+builder.Services.AddHttpClient<
+    AuPairGo.API.Services.IOneSignalService,
+    AuPairGo.API.Services.OneSignalService>(client =>
+{
+    client.BaseAddress = new Uri(
+        "https://onesignal.com/api/v1/");
+});
 var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey))

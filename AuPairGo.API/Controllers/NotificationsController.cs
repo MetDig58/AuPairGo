@@ -135,6 +135,37 @@ namespace AuPairGo.API.Controllers
                 notification.ToResponseDto());
         }
 
+        [HttpPut("device")]
+        public async Task<IActionResult> UpdateOneSignalDevice(
+    [FromBody] UpdateOneSignalDeviceDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(
+                    out var authenticatedUserId))
+            {
+                return Unauthorized(
+                    "The authenticated user ID is missing or invalid.");
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(existingUser =>
+                    existingUser.Id == authenticatedUserId);
+
+            if (user == null)
+            {
+                return NotFound(
+                    $"User with ID {authenticatedUserId} was not found.");
+            }
+
+            user.OneSignalPlayerId = dto.OneSignalPlayerId.Trim();
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "OneSignal device registered successfully."
+            });
+        }
+
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetUserNotifications(
             int userId,
