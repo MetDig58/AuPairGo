@@ -69,8 +69,8 @@ namespace AuPairGo.API.Models
         [Column("push_last_attempt_at")]
         public DateTime? PushLastAttemptAt { get; set; }
 
-        [Column("schedule_id")]
-        public int? ScheduleId { get; set; }
+        [Column("duty_task_id")]
+        public int? DutyTaskId { get; set; }
 
         [Required]
         [Column("created_at")]

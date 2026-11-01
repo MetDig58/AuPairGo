@@ -305,6 +305,10 @@ namespace AuPairGo.API.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
 
+                    b.Property<int?>("DutyTaskId")
+                        .HasColumnType("int")
+                        .HasColumnName("duty_task_id");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("is_read");
@@ -337,10 +341,6 @@ namespace AuPairGo.API.Migrations
                     b.Property<int>("RecipientUserId")
                         .HasColumnType("int")
                         .HasColumnName("recipient_user_id");
-
-                    b.Property<int?>("ScheduleId")
-                        .HasColumnType("int")
-                        .HasColumnName("schedule_id");
 
                     b.Property<int>("SenderUserId")
                         .HasColumnType("int")

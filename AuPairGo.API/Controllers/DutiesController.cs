@@ -437,7 +437,7 @@ namespace AuPairGo.API.Controllers
             {
                 RecipientUserId = parentUserId.Value,
                 SenderUserId = auPairUserId.Value,
-                ScheduleId = dutyTask.Id,
+                DutyTaskId = dutyTask.Id,
                 Title = "Au Pair checked in",
                 Message =
                     $"The au pair has manually checked in for duty '{dutyTask.Title}'.",

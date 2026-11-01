@@ -143,7 +143,7 @@ namespace AuPairGo.API.Services
                     notification.Title,
                     notification.Message,
                     notification.Id,
-                    notification.ScheduleId ?? 0);
+                    notification.DutyTaskId ?? 0);
 
                 notification.PushDeliveryStatus =
                     PushDeliveryStatus.Sent;

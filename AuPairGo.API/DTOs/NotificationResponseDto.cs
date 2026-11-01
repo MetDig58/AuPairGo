@@ -9,7 +9,7 @@ namespace AuPairGo.API.DTOs
         public string Message { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public bool IsRead { get; set; }
-        public int? ScheduleId { get; set; }
+        public int? DutyTaskId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

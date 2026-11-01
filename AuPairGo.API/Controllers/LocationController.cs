@@ -145,7 +145,7 @@ namespace AuPairGo.API.Controllers
                         {
                             RecipientUserId = parentUserId.Value,
                             SenderUserId = auPairUserId.Value,
-                            ScheduleId = dutyTask.Id,
+                            DutyTaskId = dutyTask.Id,
                             Title = "Au Pair has arrived",
                             Message =
                                 $"The au pair has arrived within 100 metres of the pickup point for duty '{dutyTask.Title}'.",
@@ -343,7 +343,7 @@ namespace AuPairGo.API.Controllers
                         {
                             RecipientUserId = parentUserId.Value,
                             SenderUserId = auPairUserId.Value,
-                            ScheduleId = dutyTask.Id,
+                            DutyTaskId = dutyTask.Id,
                             Title = "Au Pair has arrived",
                             Message =
                                 $"The au pair has arrived within 100 metres of the pickup point for duty '{dutyTask.Title}'.",

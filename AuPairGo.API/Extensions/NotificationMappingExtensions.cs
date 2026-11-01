@@ -16,7 +16,7 @@ namespace AuPairGo.API.Extensions
                 Message = notification.Message,
                 Type = notification.Type.ToString(),
                 IsRead = notification.IsRead,
-                ScheduleId = notification.ScheduleId,
+                DutyTaskId = notification.DutyTaskId,
                 CreatedAt = notification.CreatedAt
             };
         }

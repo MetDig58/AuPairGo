@@ -74,7 +74,7 @@ namespace AuPairGo.API.Controllers
             {
                 SenderUserId = authenticatedUserId,
                 RecipientUserId = dto.RecipientUserId,
-                ScheduleId = dto.ScheduleId,
+                DutyTaskId = dto.DutyTaskId,
                 Title = "EMERGENCY SOS ALERT",
                 Message = sosMessage,
                 Type = NotificationType.SosAlert,
@@ -124,7 +124,7 @@ namespace AuPairGo.API.Controllers
             {
                 SenderUserId = authenticatedUserId,
                 RecipientUserId = dto.RecipientUserId,
-                ScheduleId = dto.ScheduleId,
+                DutyTaskId = dto.DutyTaskId,
                 Title = dto.Title.Trim(),
                 Message = dto.Message.Trim(),
                 Type = dto.Type,
@@ -198,7 +198,7 @@ namespace AuPairGo.API.Controllers
                     notification.Title,
                     notification.Message,
                     notification.Id,
-                    notification.ScheduleId ?? 0);
+                    notification.DutyTaskId ?? 00);
 
                 notification.PushDeliveryStatus = PushDeliveryStatus.Sent;
                 notification.PushSentAt = DateTime.UtcNow;

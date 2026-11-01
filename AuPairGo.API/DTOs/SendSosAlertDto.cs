@@ -7,7 +7,7 @@ namespace AuPairGo.API.DTOs
         [Required(ErrorMessage = "RecipientUserId is required.")]
         public int RecipientUserId { get; set; }
 
-        public int? ScheduleId { get; set; }
+        public int? DutyTaskId { get; set; }
 
         [Required(ErrorMessage = "Alert message is required.")]
         [StringLength(500, ErrorMessage = "Message cannot exceed 500 characters.")]
