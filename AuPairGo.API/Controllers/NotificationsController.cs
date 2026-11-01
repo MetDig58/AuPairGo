@@ -2,6 +2,7 @@ using AuPairGo.API.Data;
 using AuPairGo.API.DTOs;
 using AuPairGo.API.Extensions;
 using AuPairGo.API.Models;
+using AuPairGo.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,14 @@ namespace AuPairGo.API.Controllers
     public class NotificationsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IOneSignalService _oneSignalService;
+        private readonly ILogger<NotificationsController> _logger;
 
-        public NotificationsController(ApplicationDbContext context)
+        public NotificationsController(ApplicationDbContext context, IOneSignalService oneSignalService, ILogger<NotificationsController> logger)
         {
             _context = context;
+            _oneSignalService = oneSignalService;
+            _logger = logger;
         }
 
         private bool TryGetAuthenticatedUserId(out int userId)
@@ -30,8 +35,7 @@ namespace AuPairGo.API.Controllers
         }
 
         [HttpPost("sos")]
-        public async Task<IActionResult> SendSosAlert(
-            [FromBody] SendSosAlertDto dto)
+        public async Task<IActionResult> SendSosAlert([FromBody] SendSosAlertDto dto)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))
@@ -75,21 +79,23 @@ namespace AuPairGo.API.Controllers
                 Message = sosMessage,
                 Type = NotificationType.SosAlert,
                 IsRead = false,
+                PushDeliveryStatus = PushDeliveryStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.NotificationLogs.Add(notification);
             await _context.SaveChangesAsync();
 
+            await TryDeliverPushAsync(notification);
+
             return CreatedAtAction(
-                nameof(GetUserNotifications),
-                new { userId = notification.RecipientUserId },
-                notification.ToResponseDto());
+                            nameof(GetUserNotifications),
+                            new { userId = notification.RecipientUserId },
+                            notification.ToResponseDto());
         }
 
         [HttpPost]
-        public async Task<IActionResult> SendNotification(
-            [FromBody] SendNotificationDto dto)
+        public async Task<IActionResult> SendNotification([FromBody] SendNotificationDto dto)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))
@@ -123,21 +129,117 @@ namespace AuPairGo.API.Controllers
                 Message = dto.Message.Trim(),
                 Type = dto.Type,
                 IsRead = false,
+                PushDeliveryStatus = PushDeliveryStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.NotificationLogs.Add(notification);
             await _context.SaveChangesAsync();
 
+            await TryDeliverPushAsync(notification);
+
             return CreatedAtAction(
-                nameof(GetUserNotifications),
-                new { userId = notification.RecipientUserId },
-                notification.ToResponseDto());
+                            nameof(GetUserNotifications),
+                            new { userId = notification.RecipientUserId },
+                            notification.ToResponseDto());
+        }
+
+        private async Task TryDeliverPushAsync(NotificationLog notification)
+        {
+            var recipient = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(user =>
+                    user.Id == notification.RecipientUserId);
+
+            if (recipient == null)
+            {
+                notification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                notification.PushError = "Recipient user could not be found.";
+                notification.PushLastAttemptAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogError(
+                    "Notification {NotificationId} could not be delivered because recipient user {UserId} was not found.",
+                    notification.Id,
+                    notification.RecipientUserId);
+
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(recipient.OneSignalPlayerId))
+            {
+                notification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                notification.PushError =
+                    "Recipient has no registered OneSignal subscription.";
+                notification.PushLastAttemptAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogWarning(
+                    "Notification {NotificationId} was saved, but recipient user {UserId} has no OneSignal subscription.",
+                    notification.Id,
+                    recipient.Id);
+
+                return;
+            }
+
+            notification.PushDeliveryStatus = PushDeliveryStatus.Pending;
+            notification.PushAttemptCount++;
+            notification.PushLastAttemptAt = DateTime.UtcNow;
+            notification.PushError = null;
+
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _oneSignalService.SendPushNotificationAsync(
+                    recipient.OneSignalPlayerId,
+                    notification.Title,
+                    notification.Message,
+                    notification.Id,
+                    notification.ScheduleId ?? 0);
+
+                notification.PushDeliveryStatus = PushDeliveryStatus.Sent;
+                notification.PushSentAt = DateTime.UtcNow;
+                notification.PushError = null;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Notification {NotificationId} was delivered through OneSignal.",
+                    notification.Id);
+            }
+            catch (HttpRequestException exception)
+            {
+                notification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                notification.PushError = exception.Message;
+                notification.PushLastAttemptAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogError(
+                    exception,
+                    "Notification {NotificationId} was saved, but OneSignal delivery failed.",
+                    notification.Id);
+            }
+            catch (InvalidOperationException exception)
+            {
+                notification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                notification.PushError = exception.Message;
+                notification.PushLastAttemptAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogError(
+                    exception,
+                    "Notification {NotificationId} was saved, but OneSignal configuration is missing.",
+                    notification.Id);
+            }
         }
 
         [HttpPut("device")]
-        public async Task<IActionResult> UpdateOneSignalDevice(
-    [FromBody] UpdateOneSignalDeviceDto dto)
+        public async Task<IActionResult> UpdateOneSignalDevice([FromBody] UpdateOneSignalDeviceDto dto)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))
@@ -167,9 +269,7 @@ namespace AuPairGo.API.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetUserNotifications(
-            int userId,
-            [FromQuery] bool unreadOnly = false)
+        public async Task<IActionResult> GetUserNotifications(int userId, [FromQuery] bool unreadOnly = false)
         {
             if (!TryGetAuthenticatedUserId(
                     out var authenticatedUserId))
