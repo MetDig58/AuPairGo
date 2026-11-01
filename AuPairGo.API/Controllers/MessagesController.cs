@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using AuPairGo.API.Services;
 
 namespace AuPairGo.API.Controllers
 {
@@ -15,10 +16,14 @@ namespace AuPairGo.API.Controllers
     public class MessagesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IOneSignalService _oneSignalService;
+        private readonly ILogger<MessagesController> _logger;
 
-        public MessagesController(ApplicationDbContext context)
+        public MessagesController(ApplicationDbContext context, IOneSignalService oneSignalService, ILogger<MessagesController> logger)
         {
             _context = context;
+            _oneSignalService = oneSignalService;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -41,7 +46,8 @@ namespace AuPairGo.API.Controllers
                 .Select(user => new
                 {
                     user.Id,
-                    user.Role
+                    user.Role,
+                    user.OneSignalPlayerId
                 })
                 .ToListAsync();
 
@@ -77,6 +83,89 @@ namespace AuPairGo.API.Controllers
 
             _context.ChatMessages.Add(message);
             await _context.SaveChangesAsync();
+
+            var messageNotification = new NotificationLog
+            {
+                SenderUserId = senderUserId,
+                RecipientUserId = dto.RecipientUserId,
+                Title = "New message",
+                Message = message.MessageText,
+                Type = NotificationType.General,
+                IsRead = false,
+                PushDeliveryStatus = PushDeliveryStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.NotificationLogs.Add(messageNotification);
+            await _context.SaveChangesAsync();
+
+            if (string.IsNullOrWhiteSpace(recipient.OneSignalPlayerId))
+            {
+                messageNotification.PushDeliveryStatus =
+                    PushDeliveryStatus.Failed;
+                messageNotification.PushError =
+                    "Recipient has no registered OneSignal subscription.";
+                messageNotification.PushLastAttemptAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogWarning(
+                    "Message notification {NotificationId} was saved, but recipient user {UserId} has no OneSignal subscription.",
+                    messageNotification.Id,
+                    recipient.Id);
+
+                return Ok(message.ToResponseDto());
+            }
+
+            messageNotification.PushDeliveryStatus =
+                PushDeliveryStatus.Pending;
+            messageNotification.PushAttemptCount++;
+            messageNotification.PushLastAttemptAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _oneSignalService.SendPushNotificationAsync(
+                    recipient.OneSignalPlayerId,
+                    $"New message from {sender.Role}",
+                    message.MessageText,
+                    messageNotification.Id,
+                    messageNotification.DutyTaskId ?? 0);
+
+                messageNotification.PushDeliveryStatus =
+                    PushDeliveryStatus.Sent;
+                messageNotification.PushSentAt = DateTime.UtcNow;
+                messageNotification.PushError = null;
+
+                await _context.SaveChangesAsync();
+            }
+            catch (HttpRequestException exception)
+            {
+                messageNotification.PushDeliveryStatus =
+                    PushDeliveryStatus.Failed;
+                messageNotification.PushError = exception.Message;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogError(
+                    exception,
+                    "Message notification {NotificationId} was saved, but OneSignal delivery failed.",
+                    messageNotification.Id);
+            }
+            catch (InvalidOperationException exception)
+            {
+                messageNotification.PushDeliveryStatus =
+                    PushDeliveryStatus.Failed;
+                messageNotification.PushError = exception.Message;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogError(
+                    exception,
+                    "Message notification {NotificationId} was saved, but OneSignal configuration is missing.",
+                    messageNotification.Id);
+            }
 
             return Ok(message.ToResponseDto());
         }
