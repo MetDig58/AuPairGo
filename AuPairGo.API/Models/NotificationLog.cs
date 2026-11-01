@@ -54,13 +54,20 @@ namespace AuPairGo.API.Models
         [Required]
         [Column("push_delivery_status")]
         public PushDeliveryStatus PushDeliveryStatus { get; set; } =
-    PushDeliveryStatus.NotAttempted;
+        PushDeliveryStatus.NotAttempted;
 
         [Column("push_sent_at")]
         public DateTime? PushSentAt { get; set; }
 
         [Column("push_error")]
         public string? PushError { get; set; }
+
+        [Required]
+        [Column("push_attempt_count")]
+        public int PushAttemptCount { get; set; } = 0;
+
+        [Column("push_last_attempt_at")]
+        public DateTime? PushLastAttemptAt { get; set; }
 
         [Column("schedule_id")]
         public int? ScheduleId { get; set; }

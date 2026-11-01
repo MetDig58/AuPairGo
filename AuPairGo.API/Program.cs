@@ -21,6 +21,8 @@ builder.Services.AddHttpClient<
     client.BaseAddress = new Uri(
         "https://onesignal.com/api/v1/");
 });
+builder.Services.AddHostedService<
+    AuPairGo.API.Services.NotificationRetryWorker>();
 var jwtKey = builder.Configuration["Jwt:Key"];
 
 if (string.IsNullOrWhiteSpace(jwtKey))

@@ -314,6 +314,10 @@ namespace AuPairGo.API.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("message");
 
+                    b.Property<int>("PushAttemptCount")
+                        .HasColumnType("int")
+                        .HasColumnName("push_attempt_count");
+
                     b.Property<int>("PushDeliveryStatus")
                         .HasColumnType("int")
                         .HasColumnName("push_delivery_status");
@@ -321,6 +325,10 @@ namespace AuPairGo.API.Migrations
                     b.Property<string>("PushError")
                         .HasColumnType("longtext")
                         .HasColumnName("push_error");
+
+                    b.Property<DateTime?>("PushLastAttemptAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("push_last_attempt_at");
 
                     b.Property<DateTime?>("PushSentAt")
                         .HasColumnType("datetime(6)")
