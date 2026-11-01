@@ -12,6 +12,14 @@ namespace AuPairGo.API.Models
         ManualCheckIn
     }
 
+    public enum PushDeliveryStatus
+    {
+        NotAttempted,
+        Pending,
+        Sent,
+        Failed
+    }
+
     [Table("notification_logs")]
     public class NotificationLog
     {
@@ -42,6 +50,17 @@ namespace AuPairGo.API.Models
 
         [Column("is_read")]
         public bool IsRead { get; set; } = false;
+
+        [Required]
+        [Column("push_delivery_status")]
+        public PushDeliveryStatus PushDeliveryStatus { get; set; } =
+    PushDeliveryStatus.NotAttempted;
+
+        [Column("push_sent_at")]
+        public DateTime? PushSentAt { get; set; }
+
+        [Column("push_error")]
+        public string? PushError { get; set; }
 
         [Column("schedule_id")]
         public int? ScheduleId { get; set; }

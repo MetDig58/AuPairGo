@@ -314,6 +314,18 @@ namespace AuPairGo.API.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("message");
 
+                    b.Property<int>("PushDeliveryStatus")
+                        .HasColumnType("int")
+                        .HasColumnName("push_delivery_status");
+
+                    b.Property<string>("PushError")
+                        .HasColumnType("longtext")
+                        .HasColumnName("push_error");
+
+                    b.Property<DateTime?>("PushSentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("push_sent_at");
+
                     b.Property<int>("RecipientUserId")
                         .HasColumnType("int")
                         .HasColumnName("recipient_user_id");

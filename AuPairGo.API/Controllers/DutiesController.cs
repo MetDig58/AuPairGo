@@ -443,6 +443,7 @@ namespace AuPairGo.API.Controllers
                     $"The au pair has manually checked in for duty '{dutyTask.Title}'.",
                 Type = NotificationType.ManualCheckIn,
                 IsRead = false,
+                PushDeliveryStatus = PushDeliveryStatus.Pending,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -453,10 +454,14 @@ namespace AuPairGo.API.Controllers
             var parentUser = await _context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(user =>
-                    user.Id == checkInNotification.RecipientUserId);
+        user.Id == checkInNotification.RecipientUserId);
 
             if (parentUser == null)
             {
+                checkInNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                checkInNotification.PushError = "Parent user could not be found.";
+                await _context.SaveChangesAsync();
+
                 _logger.LogError(
                     "Manual check-in notification {NotificationId} was saved, but parent user {UserId} was not found.",
                     checkInNotification.Id,
@@ -469,6 +474,11 @@ namespace AuPairGo.API.Controllers
 
             if (string.IsNullOrWhiteSpace(parentUser.OneSignalPlayerId))
             {
+                checkInNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                checkInNotification.PushError =
+                    "Parent user has no registered OneSignal subscription.";
+                await _context.SaveChangesAsync();
+
                 _logger.LogWarning(
                     "Manual check-in notification {NotificationId} was saved, but parent user {UserId} has no OneSignal subscription registered.",
                     checkInNotification.Id,
@@ -486,9 +496,19 @@ namespace AuPairGo.API.Controllers
                     checkInNotification.Message,
                     checkInNotification.Id,
                     dutyTask.Id);
+
+                checkInNotification.PushDeliveryStatus = PushDeliveryStatus.Sent;
+                checkInNotification.PushSentAt = DateTime.UtcNow;
+                checkInNotification.PushError = null;
+
+                await _context.SaveChangesAsync();
             }
             catch (HttpRequestException exception)
             {
+                checkInNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                checkInNotification.PushError = exception.Message;
+                await _context.SaveChangesAsync();
+
                 _logger.LogError(
                     exception,
                     "Manual check-in notification {NotificationId} was saved, but OneSignal delivery failed.",
@@ -500,6 +520,10 @@ namespace AuPairGo.API.Controllers
             }
             catch (InvalidOperationException exception)
             {
+                checkInNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                checkInNotification.PushError = exception.Message;
+                await _context.SaveChangesAsync();
+
                 _logger.LogError(
                     exception,
                     "Manual check-in notification {NotificationId} was saved, but OneSignal configuration is missing.",
@@ -558,42 +582,6 @@ namespace AuPairGo.API.Controllers
             }
 
             dutyTask.Status = DutyStatus.Completed;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(dutyTask.ToResponseDto());
-        }
-
-        // PATCH: api/duties/{id}/status
-        [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateDutyStatus(int id, [FromBody] UpdateDutyStatusDto dto)
-        {
-            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
-            {
-                return Unauthorized("The authenticated user ID is missing or invalid.");
-            }
-
-            var dutyTask = await _context.DutyTasks
-                .Include(duty => duty.ParentProfile)
-                .Include(duty => duty.AuPairProfile)
-                .FirstOrDefaultAsync(duty => duty.Id == id);
-
-            if (dutyTask == null)
-            {
-                return NotFound($"Duty Task with the id: {id} was not found.");
-            }
-
-            var isParent = dutyTask.ParentProfile?.UserId == authenticatedUserId;
-            var isAuPair = dutyTask.AuPairProfile?.UserId == authenticatedUserId;
-
-            if (!isParent && !isAuPair)
-            {
-                return StatusCode(
-                    StatusCodes.Status403Forbidden,
-                    "You can only update duties connected to your account.");
-            }
-
-            dutyTask.Status = dto.Status;
 
             await _context.SaveChangesAsync();
 
