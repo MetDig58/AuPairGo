@@ -121,6 +121,8 @@ namespace AuPairGo.API.Controllers
 
             _context.LocationLogs.Add(locationLog);
 
+            NotificationLog? arrivalNotification = null;
+
             var pickupAddress = dutyTask.PickupAddress;
 
             if (!dutyTask.PickupArrivalNotified &&
@@ -139,7 +141,7 @@ namespace AuPairGo.API.Controllers
 
                     if (parentUserId.HasValue && auPairUserId.HasValue)
                     {
-                        var arrivalNotification = new NotificationLog
+                        arrivalNotification = new NotificationLog
                         {
                             RecipientUserId = parentUserId.Value,
                             SenderUserId = auPairUserId.Value,
@@ -162,10 +164,73 @@ namespace AuPairGo.API.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (arrivalNotification != null)
+            {
+                var parentUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(user =>
+                        user.Id == arrivalNotification.RecipientUserId);
+
+                if (parentUser == null)
+                {
+                    _logger.LogError(
+                        "Arrival notification {NotificationId} was saved, but recipient user {UserId} was not found.",
+                        arrivalNotification.Id,
+                        arrivalNotification.RecipientUserId);
+
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "The arrival notification was saved, but its recipient could not be found.");
+                }
+
+                if (string.IsNullOrWhiteSpace(parentUser.OneSignalPlayerId))
+                {
+                    _logger.LogWarning(
+                        "Arrival notification {NotificationId} was saved, but parent user {UserId} has no OneSignal subscription registered.",
+                        arrivalNotification.Id,
+                        parentUser.Id);
+
+                    return Conflict(
+                        "The arrival notification was saved, but the parent has no registered OneSignal device.");
+                }
+
+                try
+                {
+                    await _oneSignalService.SendPushNotificationAsync(
+                        parentUser.OneSignalPlayerId,
+                        arrivalNotification.Title,
+                        arrivalNotification.Message,
+                        arrivalNotification.Id,
+                        dutyTask.Id);
+                }
+                catch (HttpRequestException exception)
+                {
+                    _logger.LogError(
+                        exception,
+                        "Arrival notification {NotificationId} was saved, but OneSignal delivery failed.",
+                        arrivalNotification.Id);
+
+                    return StatusCode(
+                        StatusCodes.Status502BadGateway,
+                        "The arrival notification was saved, but OneSignal delivery failed.");
+                }
+                catch (InvalidOperationException exception)
+                {
+                    _logger.LogError(
+                        exception,
+                        "Arrival notification {NotificationId} was saved, but OneSignal configuration is missing.",
+                        arrivalNotification.Id);
+
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        "The arrival notification was saved, but OneSignal is not configured.");
+                }
+            }
+
             return CreatedAtAction(
-                            nameof(GetLocationLogsForDuty),
-                            new { dutyTaskId = locationLog.DutyTaskId },
-                            locationLog.ToResponseDto());
+                                    nameof(GetLocationLogsForDuty),
+                                    new { dutyTaskId = locationLog.DutyTaskId },
+                                    locationLog.ToResponseDto());
         }
 
         [HttpGet("duties/{dutyTaskId}")]
