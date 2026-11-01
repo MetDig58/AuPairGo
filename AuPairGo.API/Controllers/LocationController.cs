@@ -151,6 +151,7 @@ namespace AuPairGo.API.Controllers
                                 $"The au pair has arrived within 100 metres of the pickup point for duty '{dutyTask.Title}'.",
                             Type = NotificationType.PickupArrival,
                             IsRead = false,
+                            PushDeliveryStatus = PushDeliveryStatus.Pending,
                             CreatedAt = DateTime.UtcNow
                         };
 
@@ -173,6 +174,11 @@ namespace AuPairGo.API.Controllers
 
                 if (parentUser == null)
                 {
+                    arrivalNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError = "Recipient user could not be found.";
+
+                    await _context.SaveChangesAsync();
+
                     _logger.LogError(
                         "Arrival notification {NotificationId} was saved, but recipient user {UserId} was not found.",
                         arrivalNotification.Id,
@@ -185,6 +191,12 @@ namespace AuPairGo.API.Controllers
 
                 if (string.IsNullOrWhiteSpace(parentUser.OneSignalPlayerId))
                 {
+                    arrivalNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError =
+                        "Parent user has no registered OneSignal subscription.";
+
+                    await _context.SaveChangesAsync();
+
                     _logger.LogWarning(
                         "Arrival notification {NotificationId} was saved, but parent user {UserId} has no OneSignal subscription registered.",
                         arrivalNotification.Id,
@@ -202,9 +214,18 @@ namespace AuPairGo.API.Controllers
                         arrivalNotification.Message,
                         arrivalNotification.Id,
                         dutyTask.Id);
+                    arrivalNotification.PushDeliveryStatus = PushDeliveryStatus.Sent;
+                    arrivalNotification.PushSentAt = DateTime.UtcNow;
+                    arrivalNotification.PushError = null;
+
+                    await _context.SaveChangesAsync();
                 }
                 catch (HttpRequestException exception)
                 {
+                    arrivalNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError = exception.Message;
+
+                    await _context.SaveChangesAsync();
                     _logger.LogError(
                         exception,
                         "Arrival notification {NotificationId} was saved, but OneSignal delivery failed.",
@@ -216,6 +237,10 @@ namespace AuPairGo.API.Controllers
                 }
                 catch (InvalidOperationException exception)
                 {
+                    arrivalNotification.PushDeliveryStatus = PushDeliveryStatus.Failed;
+                    arrivalNotification.PushError = exception.Message;
+
+                    await _context.SaveChangesAsync();
                     _logger.LogError(
                         exception,
                         "Arrival notification {NotificationId} was saved, but OneSignal configuration is missing.",
