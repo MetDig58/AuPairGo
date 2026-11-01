@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using AuPairGo.API.Services;
 
 namespace AuPairGo.API.Controllers
 {
@@ -15,10 +16,14 @@ namespace AuPairGo.API.Controllers
     public class DutiesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IOneSignalService _oneSignalService;
+        private readonly ILogger<DutiesController> _logger;
 
-        public DutiesController(ApplicationDbContext context)
+        public DutiesController(ApplicationDbContext context, IOneSignalService oneSignalService, ILogger<DutiesController> logger)
         {
             _context = context;
+            _oneSignalService = oneSignalService;
+            _logger = logger;
         }
 
         private bool TryGetAuthenticatedUserId(out int userId)
@@ -382,6 +387,7 @@ namespace AuPairGo.API.Controllers
             }
 
             var dutyTask = await _context.DutyTasks
+                .Include(duty => duty.ParentProfile)
                 .Include(duty => duty.AuPairProfile)
                 .FirstOrDefaultAsync(duty => duty.Id == id);
 
@@ -417,7 +423,92 @@ namespace AuPairGo.API.Controllers
 
             dutyTask.Status = DutyStatus.InProgress;
 
+            var parentUserId = dutyTask.ParentProfile?.UserId;
+            var auPairUserId = dutyTask.AuPairProfile?.UserId;
+
+            if (!parentUserId.HasValue || !auPairUserId.HasValue)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "The duty is missing valid parent or au pair user information.");
+            }
+
+            var checkInNotification = new NotificationLog
+            {
+                RecipientUserId = parentUserId.Value,
+                SenderUserId = auPairUserId.Value,
+                ScheduleId = dutyTask.Id,
+                Title = "Au Pair checked in",
+                Message =
+                    $"The au pair has manually checked in for duty '{dutyTask.Title}'.",
+                Type = NotificationType.ManualCheckIn,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.NotificationLogs.Add(checkInNotification);
+
             await _context.SaveChangesAsync();
+
+            var parentUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(user =>
+                    user.Id == checkInNotification.RecipientUserId);
+
+            if (parentUser == null)
+            {
+                _logger.LogError(
+                    "Manual check-in notification {NotificationId} was saved, but parent user {UserId} was not found.",
+                    checkInNotification.Id,
+                    checkInNotification.RecipientUserId);
+
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "The duty was checked in and notification saved, but the parent user could not be found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(parentUser.OneSignalPlayerId))
+            {
+                _logger.LogWarning(
+                    "Manual check-in notification {NotificationId} was saved, but parent user {UserId} has no OneSignal subscription registered.",
+                    checkInNotification.Id,
+                    parentUser.Id);
+
+                return Conflict(
+                    "The duty was checked in and notification saved, but the parent has no registered OneSignal device.");
+            }
+
+            try
+            {
+                await _oneSignalService.SendPushNotificationAsync(
+                    parentUser.OneSignalPlayerId,
+                    checkInNotification.Title,
+                    checkInNotification.Message,
+                    checkInNotification.Id,
+                    dutyTask.Id);
+            }
+            catch (HttpRequestException exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Manual check-in notification {NotificationId} was saved, but OneSignal delivery failed.",
+                    checkInNotification.Id);
+
+                return StatusCode(
+                    StatusCodes.Status502BadGateway,
+                    "The duty was checked in and notification saved, but OneSignal delivery failed.");
+            }
+            catch (InvalidOperationException exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Manual check-in notification {NotificationId} was saved, but OneSignal configuration is missing.",
+                    checkInNotification.Id);
+
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "The duty was checked in and notification saved, but OneSignal is not configured.");
+            }
 
             return Ok(dutyTask.ToResponseDto());
         }

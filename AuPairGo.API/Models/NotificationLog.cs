@@ -8,7 +8,8 @@ namespace AuPairGo.API.Models
         ScheduleUpdate,
         SosAlert,
         General,
-        PickupArrival
+        PickupArrival,
+        ManualCheckIn
     }
 
     [Table("notification_logs")]
