@@ -5,6 +5,7 @@ using AuPairGo.API.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Globalization;
 
 namespace AuPairGo.API.Tests;
 
@@ -106,11 +107,11 @@ public class SosNotificationTests
             notification.Message);
 
         Assert.Contains(
-            "-25.7479",
+            (-25.7479).ToString(CultureInfo.CurrentCulture),
             notification.Message);
 
         Assert.Contains(
-            "28.2293",
+            28.2293.ToString(CultureInfo.CurrentCulture),
             notification.Message);
 
         Assert.Equal(
