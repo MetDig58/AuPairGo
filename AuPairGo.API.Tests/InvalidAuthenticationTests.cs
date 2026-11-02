@@ -4,6 +4,7 @@ using AuPairGo.API.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Security.Claims;
 
 namespace AuPairGo.API.Tests;
 
@@ -50,6 +51,51 @@ public class InvalidAuthenticationTests
             response.StatusCode);
 
         // Assert: no push was attempted.
+        Assert.Empty(fakeOneSignal.Attempts);
+    }
+
+    [Fact]
+    public async Task Device_registration_returns_unauthorized_for_invalid_user_id_claim()
+    {
+        // Arrange
+        var fakeOneSignal = new FakeOneSignalService();
+
+        var controller = new NotificationsController(
+            _fixture.Context,
+            fakeOneSignal,
+            NullLogger<NotificationsController>.Instance);
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        new[]
+                        {
+                        new Claim(
+                            ClaimTypes.NameIdentifier,
+                            "not-a-number")
+                        },
+                        "TestAuthentication"))
+            }
+        };
+
+        var request = new UpdateOneSignalDeviceDto
+        {
+            OneSignalPlayerId = "should-not-be-saved"
+        };
+
+        // Act
+        var result = await controller.UpdateOneSignalDevice(request);
+
+        // Assert
+        var response = Assert.IsType<UnauthorizedObjectResult>(result);
+
+        Assert.Equal(
+            StatusCodes.Status401Unauthorized,
+            response.StatusCode);
+
         Assert.Empty(fakeOneSignal.Attempts);
     }
 }
