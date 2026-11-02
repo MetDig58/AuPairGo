@@ -4,7 +4,7 @@ bin/
 obj/
 *.user
 *.suo
-ReadMe.txt
+Info.txt
 
 ## Ignore OS specific files
 .DS_Store
