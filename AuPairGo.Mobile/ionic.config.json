@@ -1,0 +1,7 @@
+{
+  "name": "AuPairGo.Mobile",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
