@@ -1,27 +1,21 @@
-#container {
-  text-align: center;
-
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+.sign-in-container {
+  display: flex;
+  padding-top: 100px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  font-size: 14px;
+  color: #666666;
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-
-  color: #8c8c8c;
-
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
-}
+  .sign-in-btn {
+    --color: #3880ff;
+    --padding-start: 4px;
+    --padding-end: 0;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 14px;
+    text-decoration: underline;
+    margin: 0;
+    height: auto;
+  }
