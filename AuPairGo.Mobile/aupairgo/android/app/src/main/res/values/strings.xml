@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">aupairgo</string>
+    <string name="title_activity_main">aupairgo</string>
+    <string name="package_name">ionic.aupairgo</string>
+    <string name="custom_url_scheme">ionic.aupairgo</string>
+</resources>
