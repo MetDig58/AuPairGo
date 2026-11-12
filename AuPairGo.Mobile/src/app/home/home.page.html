@@ -1,4 +1,41 @@
-<div class="sign-in-container">
-  <span>Already have an account?</span>
-  <ion-button fill="clear" routerLink="/login" class="sign-in-btn"> Sign in </ion-button>
-</div>
+<ion-content scrollY="false" [fullscreen]="true" class="ion-padding">
+  <div class="page-wrapper">
+    <ion-card class="custom-dark-card">
+      <ion-card-content class="card-content-layout">
+        <!-- Logo -->
+        <div class="logo-container">
+          <img src="assets/images/AuPairGoLogo.png" alt="AuPairGoLogo" loading="lazy" />
+        </div>
+
+        <!-- Buttons -->
+        <div class="button-group">
+          <ion-button
+            type="button"
+            expand="block"
+            shape="round"
+            class="action-btn"
+            routerLink="/login"
+            routerDirection="forward"
+            color="primary"
+          >
+            I AM A PARENT
+            <ion-icon src="assets/icon/family-icon.svg" slot="end"></ion-icon>
+          </ion-button>
+
+          <ion-button
+            type="button"
+            expand="block"
+            shape="round"
+            class="action-btn"
+            routerLink="/login"
+            routerDirection="forward"
+            color="secondary"
+          >
+            I AM A AU PAIR
+            <ion-icon src="assets/icon/Steering-wheel-icon.svg" slot="end"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
