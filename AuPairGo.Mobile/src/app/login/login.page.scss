@@ -1,3 +1,4 @@
+/* --- Typography --- */
 .login-title {
   color: #ffffff;
   font-size: 1.5rem;
@@ -7,27 +8,87 @@
   text-align: center;
 }
 
+/* --- Inputs --- */
 ion-input {
-width: 100%;
+  width: 100%;
   --background: #1f1f1f;
   --padding-start: 16px;
   --padding-end: 15px;
   --padding-top: 12px;
   --padding-bottom: 12px;
-  border-radius: 12px;
-  overflow: hidden;
-  font-size: 1rem;
   --color: #ffffff;
   --placeholder-color: #888888;
   --placeholder-opacity: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 1rem;
   margin-bottom: 16px;
 }
 
+/* Force placeholder and text color to apply on iOS */
+ion-input::part(native) {
+  color: #ffffff;
+}
+
+ion-input::part(native)::placeholder {
+  color: #888888;
+  opacity: 1;
+}
+
+/* --- Password Toggle Eye Icon --- */
+.password-toggle-icon {
+  font-size: 1.4rem;
+  color: #888888;
+  cursor: pointer;
+  margin-right: 12px;
+  z-index: 10;
+  transition: color 0.2s ease-in-out;
+}
+
+.password-toggle-icon:hover,
+.password-toggle-icon:active {
+  color: var(--ion-color-secondary);
+}
+
+/* --- Flexbox Layout for Remember Me & Forgot Password --- */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 15px;
+  margin-bottom: 24px;
+  flex-wrap: nowrap;
+  /* Force everything to stay on one line */
+}
+
+/* --- Checkbox --- */
+ion-checkbox {
+  --checkbox-background-checked: var(--ion-color-primary);
+  --checkmark-color: #000000;
+  --border-color: var(--ion-color-tertiary);
+  --border-radius: 4px;
+  color: #e0e0e0;
+  font-weight: 500;
+  font-size: 0.75rem;
+  /* Shrunk to fit */
+  white-space: nowrap;
+  margin-inline-end: 0;
+}
+
+/* Remove the hidden margin Ionic puts between the box and the text */
+ion-checkbox::part(label) {
+  margin-inline-start: 6px;
+}
+
+/* --- Forgot Password Link --- */
 .forgot-link-text {
   color: var(--ion-color-secondary);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  /* Shrunk to fit */
   font-weight: 500;
+  white-space: nowrap;
   transition: all 0.2s ease-in-out;
 }
 
@@ -41,32 +102,10 @@ width: 100%;
   text-decoration: underline;
 }
 
-ion-grid {
-  width: 100%;
-  padding: 0;
-  margin-top: 15px;
-  margin-bottom: 24px;
+/* --- Responsive Card Padding --- */
+@media (max-width: 400px) {
+  ion-card-content.card-content-layout {
+    /* Reduced padding for mobile screens so text fits */
+    padding: 40px 12px !important;
+  }
 }
-
-.password-toggle-icon {
-  font-size: 1.4rem;
-  color: #888888;
-  cursor: pointer;
-  margin-right: 12px;
-  z-index: 10;
-}
-
-.password-toggle-icon:hover,
-.password-toggle-icon:active {
-  color: var(--ion-color-secondary);
-}
-
-ion-checkbox {
-  --checkbox-background-checked: var(--ion-color-primary);
-  --checkmark-color: #000000;
-  --border-color: var(--ion-color-tertiary);
-  --border-radius: 4px;
-  color: #e0e0e0;
-  font-weight: 500;
-}
-
