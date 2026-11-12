@@ -1,12 +1,49 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>Login</ion-title>
+<ion-header name="back-button" class="ion-no-border" style="position: absolute; top: 0; width: 100%; z-index: 10">
+  <ion-toolbar style="--background: transparent">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Back"></ion-back-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
-<ion-content>
-  <div class="login-form">
-    <ion-input placeholder="Username" name="username"></ion-input>
-    <ion-input type="password" placeholder="Password" name="password"></ion-input>
-    <ion-button (click)="login()">Login</ion-button>
+
+<ion-content scrollY="false" [fullscreen]="true" class="ion-padding">
+  <div class="page-wrapper">
+    <ion-card class="custom-dark-card">
+      <ion-card-content class="card-content-layout">
+        <h2 class="login-title">Login</h2>
+        <ion-input type="email" placeholder="Enter your email"></ion-input>
+        <ion-input [type]="showPassword ? 'text' : 'password'" placeholder="Enter your password">
+          <ion-icon
+            slot="end"
+            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            (click)="togglePassword()"
+            class="password-toggle-icon"
+            aria-label="Toggle password visibility"
+          ></ion-icon>
+        </ion-input>
+        <ion-grid class="ion-no-padding">
+          <ion-row class="ion-justify-content-between ion-align-items-center">
+            <ion-col size="auto">
+              <ion-checkbox labelPlacement="end">Remember me?</ion-checkbox>
+            </ion-col>
+            <ion-col size="auto">
+              <span
+                tabindex="0"
+                role="button"
+                (click)="goToForgotPassword()"
+                (keydown.enter)="goToForgotPassword()"
+                (keydown.space)="goToForgotPassword()"
+                class="forgot-link-text"
+              >
+                Forgot Password?
+              </span>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+        <ion-button expand="block" shape="round" color="tertiary" class="action-btn ion-margin-top">
+          Log In
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>
