@@ -74,3 +74,14 @@ Thumbs.db
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+#Android
+android/.gradle/
+android/build/
+android/local.properties
+
+#ios
+ios/App/Pods
+ios/App/build
+ios/DerivedData/
+ios/App/App/public/
