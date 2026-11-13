@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   IonContent,
   IonInput,
@@ -14,6 +14,7 @@ import {
   IonButtons,
   IonToolbar,
   IonBackButton,
+  IonRouterLink,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
@@ -36,21 +37,18 @@ import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
     IonInput,
     IonCard,
     IonCheckbox,
+    IonRouterLink,
+    RouterLink,
   ],
 })
 export class LoginPage {
   showPassword: boolean = false;
-  private router = inject(Router);
 
   constructor() {
     addIcons({ eyeOutline, eyeOffOutline });
   }
 
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
-
-  goToForgotPassword(): void {
-    this.router.navigateByUrl('/forgot-password');
+  togglePassword(): boolean {
+    return (this.showPassword = !this.showPassword);
   }
 }

@@ -1,13 +1,103 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Register</ion-title>
+<ion-header name="back-button" class="ion-no-border" style="position: absolute; top: 0; width: 100%; z-index: 10">
+  <ion-toolbar style="--background: transparent">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text="Back"></ion-back-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Register</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content scrollY="false" [fullscreen]="true" class="ion-padding">
+  <div class="page-wrapper">
+    <ion-card class="custom-dark-card">
+      <ion-card-content class="card-content-layout">
+        <h2 class="register-title">Register</h2>
+        <form></form>
+        <div class="name-row">
+          <ion-input
+            label="First Name"
+            labelPlacement="floating"
+            type="text"
+            placeholder="Enter your first name"
+            errorText="Please enter a valid first name"
+          ></ion-input>
+
+          <ion-input
+            label="Last Name"
+            labelPlacement="floating"
+            type="text"
+            placeholder="Enter your last name"
+            errorText="Please enter a valid last name"
+          ></ion-input>
+        </div>
+        <ion-input
+          label="Email"
+          labelPlacement="floating"
+          type="email"
+          placeholder="Enter your email"
+          errorText="Please enter a valid email address"
+        ></ion-input>
+        <ion-input
+          label="Phone Number"
+          labelPlacement="floating"
+          type="tel"
+          placeholder="Enter your phone number"
+          errorText="Please enter a valid phone number"
+        ></ion-input>
+        <ion-input
+          label="ID Number"
+          labelPlacement="floating"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="13"
+          placeholder="Enter 13-digit ID number"
+          errorText="Please enter a valid ID number"
+        ></ion-input>
+        <ion-input
+          [type]="showPassword ? 'text' : 'password'"
+          label="Password"
+          labelPlacement="floating"
+          placeholder="Enter your password"
+          errorText="Enter a valid password"
+        >
+          <ion-icon
+            slot="end"
+            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            (click)="togglePassword()"
+            class="password-toggle-icon"
+            aria-label="Toggle password visibility"
+          ></ion-icon>
+        </ion-input>
+        <ion-input
+          [type]="showConfirmPassword ? 'text' : 'password'"
+          label="Confirm Password"
+          labelPlacement="floating"
+          placeholder="Reenter your password"
+          errorText="Passwords do not match"
+        >
+          <ion-icon
+            slot="end"
+            [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+            (click)="toggleConfirmPassword()"
+            class="password-toggle-icon"
+            aria-label="Toggle password visibility"
+          ></ion-icon>
+        </ion-input>
+        <ion-checkbox
+          labelPlacement="end"
+          label="I agree to the Terms and Conditions"
+          class="action-checkbox ion-margin-top"
+          errorText="Please agree to the T's and C's"
+        >
+          I agree to the Terms and Conditions
+        </ion-checkbox>
+        <ion-button expand="block" shape="round" color="tertiary" class="action-btn ion-margin-top">
+          Register
+        </ion-button>
+        <span tabindex="0" role="button" class="login-link-text" routerLink="/login">
+          Already Have An Account? Sign In
+        </span>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>

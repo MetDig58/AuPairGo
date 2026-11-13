@@ -24,25 +24,18 @@
           ></ion-icon>
         </ion-input>
 
-        <!-- REPLACED GRID WITH FLEXBOX DIV -->
         <div class="login-options">
           <ion-checkbox labelPlacement="end">Remember me?</ion-checkbox>
-          <span
-            tabindex="0"
-            role="button"
-            (click)="goToForgotPassword()"
-            (keydown.enter)="goToForgotPassword()"
-            (keydown.space)="goToForgotPassword()"
-            class="forgot-link-text"
-          >
+          <span tabindex="0" role="button" routerLink="/forgot-password" class="forgot-link-text">
             Forgot Password?
           </span>
         </div>
-        <!-- END REPLACEMENT -->
-
         <ion-button expand="block" shape="round" color="tertiary" class="action-btn ion-margin-top">
           Log In
         </ion-button>
+        <span tabindex="0" role="button" class="sign-up-link-text" routerLink="/register">
+          Don't Have An Account? Sign Up
+        </span>
       </ion-card-content>
     </ion-card>
   </div>

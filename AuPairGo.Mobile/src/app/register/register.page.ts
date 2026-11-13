@@ -1,16 +1,55 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import type { FormGroup } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
+import { RouterLink } from '@angular/router';
+import {
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonButton,
+  IonCheckbox,
+  IonIcon,
+  IonInput,
+  IonCardContent,
+  IonCard,
+} from '@ionic/angular';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.page.html',
   styleUrls: ['./register.page.scss'],
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule],
+  imports: [
+    IonCard,
+    IonCardContent,
+    IonInput,
+    IonIcon,
+    IonCheckbox,
+    IonButton,
+    IonBackButton,
+    IonButtons,
+    IonContent,
+    IonHeader,
+    IonToolbar,
+    CommonModule,
+    FormsModule,
+    RouterLink,
+  ],
 })
-export class RegisterPage implements OnInit {
-  constructor() {}
+export class RegisterPage {
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
+  registerForm!: FormGroup;
 
-  ngOnInit() {}
+  togglePassword(): boolean {
+    return (this.showPassword = !this.showPassword);
+  }
+
+  toggleConfirmPassword(): boolean {
+    return (this.showConfirmPassword = !this.showConfirmPassword);
+  }
+
+  constructor() {}
 }

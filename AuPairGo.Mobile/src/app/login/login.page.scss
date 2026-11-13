@@ -109,3 +109,14 @@ ion-checkbox::part(label) {
     padding: 40px 12px !important;
   }
 }
+
+.sign-up-link-text {
+  color: var(--ion-color-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  padding-top: 15px;
+}
+
+.sign-up-link-text:hover {
+  text-decoration: underline;
+}
