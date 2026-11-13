@@ -4,6 +4,7 @@
 
 export const environment = {
   production: false,
+  apiUrl: 'https://aupairgo-api-f2eha0d9eub9cpew.southafricanorth-01.azurewebsites.net/',
 };
 
 /*
