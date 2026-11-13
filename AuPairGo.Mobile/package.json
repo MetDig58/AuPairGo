@@ -34,6 +34,7 @@
     "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.6.2",
     "@capacitor/keyboard": "8.0.6",
+    "@capacitor/preferences": "^8.0.1",
     "@capacitor/status-bar": "8.0.4",
     "@ionic/angular": "^9.0.0",
     "ionicons": "^8.1.0",
@@ -55,8 +56,8 @@
     "eslint": "^10.10.0",
     "jsdom": "^31.0.0",
     "prettier": "^3.9.10",
-    "typescript": "~6.0.0",
-    "typescript-eslint": "^8.61.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
     "vitest": "^5.1.0"
   },
   "prettier": "@ionic/prettier-config"

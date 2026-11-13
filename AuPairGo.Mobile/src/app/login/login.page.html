@@ -12,9 +12,18 @@
       <ion-card-content class="card-content-layout">
         <h2 class="login-title">Login</h2>
 
-        <ion-input type="email" placeholder="Enter your email"></ion-input>
+        <!-- 1. Bound email to ngModel -->
+        <ion-input type="email" placeholder="Enter your email" [(ngModel)]="email" name="email" autocomplete="email">
+        </ion-input>
 
-        <ion-input [type]="showPassword ? 'text' : 'password'" placeholder="Enter your password">
+        <!-- 2. Bound password to ngModel -->
+        <ion-input
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          name="password"
+          autocomplete="current-password"
+        >
           <ion-icon
             slot="end"
             [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
@@ -25,14 +34,25 @@
         </ion-input>
 
         <div class="login-options">
-          <ion-checkbox labelPlacement="end">Remember me?</ion-checkbox>
+          <!-- 3. Bound checkbox to ngModel -->
+          <ion-checkbox labelPlacement="end" [(ngModel)]="rememberMe" name="rememberMe"> Remember me? </ion-checkbox>
           <span tabindex="0" role="button" routerLink="/forgot-password" class="forgot-link-text">
             Forgot Password?
           </span>
         </div>
-        <ion-button expand="block" shape="round" color="tertiary" class="action-btn ion-margin-top">
-          Log In
+
+        <!-- 4. Added click event and disabled state -->
+        <ion-button
+          expand="block"
+          shape="round"
+          color="tertiary"
+          class="action-btn ion-margin-top"
+          (click)="login()"
+          [disabled]="isLoading"
+        >
+          {{ isLoading ? 'Logging in...' : 'Log In' }}
         </ion-button>
+
         <span tabindex="0" role="button" class="sign-up-link-text" routerLink="/register">
           Don't Have An Account? Sign Up
         </span>
