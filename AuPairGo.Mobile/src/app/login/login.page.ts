@@ -77,7 +77,16 @@ export class LoginPage {
       await this.router.navigateByUrl('/home', { replaceUrl: true });
     } catch (err: any) {
       console.error('Login error:', err);
-      const msg = err.error?.title || err.error?.message || err.message || 'Login failed';
+      // eslint-disable-next-line no-useless-assignment
+      let msg = 'An unexpected error occurred.';
+
+      // Status 0 means the browser blocked the request (CORS, DNS, VPN, or Server down)
+      if (err.status === 0) {
+        msg = 'Cannot reach the server. Check your internet connection, VPN, or CORS settings.';
+      } else {
+        msg = err.error?.title || err.error?.message || err.message || 'Login failed';
+      }
+
       await this.showToast(msg, 'danger');
     } finally {
       this.isLoading = false;

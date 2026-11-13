@@ -9,12 +9,24 @@ export class TokenStorage {
 
   async readUser(): Promise<any | null> {
     const raw = (await Preferences.get({ key: 'auth.user' })).value;
-    return raw ? JSON.parse(raw) : null;
+    if (!raw || raw === 'undefined') {
+      return null;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to parse user from storage', e);
+      return null;
+    }
   }
 
   async write(token: string, user: any): Promise<void> {
     await Preferences.set({ key: 'auth.token', value: token });
-    await Preferences.set({ key: 'auth.user', value: JSON.stringify(user) });
+    if (user !== undefined && user !== null) {
+      await Preferences.set({ key: 'auth.user', value: JSON.stringify(user) });
+    } else {
+      await Preferences.remove({ key: 'auth.user' });
+    }
   }
 
   async clear(): Promise<void> {
