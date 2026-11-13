@@ -9,8 +9,9 @@ import { IonRouterOutlet, IonApp, AnimationController, type Animation } from '@i
 export class AppComponent {
   private animationCtrl = inject(AnimationController);
 
-  slowerTransition = (baseEl: HTMLElement, opts?: any): Animation => {
-    const DURATION = 500;
+  scaleFadeTransition = (baseEl: HTMLElement, opts?: any): Animation => {
+    const DURATION = 350;
+    const EASING = 'ease-out';
 
     if (!opts || !opts.enteringEl || !opts.leavingEl) {
       return this.animationCtrl.create();
@@ -20,14 +21,16 @@ export class AppComponent {
       .create()
       .addElement(opts.enteringEl)
       .duration(DURATION)
-      .easing('ease-in-out')
+      .easing(EASING)
+      .fromTo('transform', 'scale(0.95)', 'scale(1)')
       .fromTo('opacity', 0, 1);
 
     const leavingAnimation = this.animationCtrl
       .create()
       .addElement(opts.leavingEl)
       .duration(DURATION)
-      .easing('ease-in-out')
+      .easing(EASING)
+      .fromTo('transform', 'scale(1)', 'scale(1)')
       .fromTo('opacity', 1, 0);
 
     return this.animationCtrl.create().addAnimation([enteringAnimation, leavingAnimation]);

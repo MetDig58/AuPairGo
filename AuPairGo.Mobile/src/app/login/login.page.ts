@@ -8,9 +8,6 @@ import {
   IonCard,
   IonCardContent,
   IonCheckbox,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonButton,
   IonIcon,
   IonHeader,
@@ -32,7 +29,6 @@ import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
     IonHeader,
     IonIcon,
     IonButton,
-    IonRow,
     IonCardContent,
     IonContent,
     CommonModule,
@@ -40,8 +36,6 @@ import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
     IonInput,
     IonCard,
     IonCheckbox,
-    IonGrid,
-    IonCol,
   ],
 })
 export class LoginPage {
