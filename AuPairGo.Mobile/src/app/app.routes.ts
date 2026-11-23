@@ -28,6 +28,7 @@ export const routes: Routes = [
   },
   {
     path: 'au-pair-dashboard',
-    loadComponent: () => import('./au-pair-dashboard/au-pair-dashboard.page').then((m) => m.AuPairDashboardPage),
+    loadComponent: () =>
+      import('./Au_Pair/au-pair-dashboard/au-pair-dashboard.page').then((m) => m.AuPairDashboardPage),
   },
 ];
