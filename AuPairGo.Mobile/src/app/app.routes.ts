@@ -24,10 +24,11 @@ export const routes: Routes = [
   },
   {
     path: 'parent-dashboard',
-    loadComponent: () => import('./parent-dashboard/parent-dashboard.page').then((m) => m.ParentDashboardPage),
+    loadComponent: () => import('./Parent/parent-dashboard/parent-dashboard.page').then((m) => m.ParentDashboardPage),
   },
   {
     path: 'au-pair-dashboard',
-    loadComponent: () => import('./au-pair-dashboard/au-pair-dashboard.page').then((m) => m.AuPairDashboardPage),
+    loadComponent: () =>
+      import('./Au_Pair/au-pair-dashboard/au-pair-dashboard.page').then((m) => m.AuPairDashboardPage),
   },
 ];
