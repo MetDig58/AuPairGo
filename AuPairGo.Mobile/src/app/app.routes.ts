@@ -22,4 +22,12 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./Shared/register/register.page').then((m) => m.RegisterPage),
   },
+  {
+    path: 'parent-dashboard',
+    loadComponent: () => import('./parent-dashboard/parent-dashboard.page').then((m) => m.ParentDashboardPage),
+  },
+  {
+    path: 'au-pair-dashboard',
+    loadComponent: () => import('./au-pair-dashboard/au-pair-dashboard.page').then((m) => m.AuPairDashboardPage),
+  },
 ];
