@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   IonContent,
   IonInput,
@@ -15,18 +15,15 @@ import {
   IonToolbar,
   IonBackButton,
   IonRouterLink,
-  ToastController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { eyeOutline, eyeOffOutline } from 'ionicons/icons';
 
-import { AuthService } from '../Core/auth/auth.service';
-
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
-  standalone: true,
   styleUrls: ['./login.page.scss'],
+  standalone: true,
   imports: [
     IonBackButton,
     IonToolbar,
@@ -46,16 +43,7 @@ import { AuthService } from '../Core/auth/auth.service';
   ],
 })
 export class LoginPage {
-  email = '';
-  password = '';
-  rememberMe = false;
-
-  showPassword = false;
-  isLoading = false;
-
-  private auth = inject(AuthService);
-  private router = inject(Router);
-  private toastCtrl = inject(ToastController);
+  showPassword: boolean = false;
 
   constructor() {
     addIcons({ eyeOutline, eyeOffOutline });
@@ -63,43 +51,5 @@ export class LoginPage {
 
   togglePassword(): void {
     this.showPassword = !this.showPassword;
-  }
-
-  async login(): Promise<void> {
-    if (!this.email || !this.password) {
-      await this.showToast('Please enter both email and password', 'warning');
-      return;
-    }
-
-    this.isLoading = true;
-    try {
-      await this.auth.login(this.email, this.password);
-      await this.router.navigateByUrl('/home', { replaceUrl: true });
-    } catch (err: any) {
-      console.error('Login error:', err);
-      // eslint-disable-next-line no-useless-assignment
-      let msg = 'An unexpected error occurred.';
-
-      // Status 0 means the browser blocked the request (CORS, DNS, VPN, or Server down)
-      if (err.status === 0) {
-        msg = 'Cannot reach the server. Check your internet connection, VPN, or CORS settings.';
-      } else {
-        msg = err.error?.title || err.error?.message || err.message || 'Login failed';
-      }
-
-      await this.showToast(msg, 'danger');
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  private async showToast(message: string, color: string) {
-    const toast = await this.toastCtrl.create({
-      message,
-      color,
-      duration: 3000,
-      position: 'bottom',
-    });
-    await toast.present();
   }
 }

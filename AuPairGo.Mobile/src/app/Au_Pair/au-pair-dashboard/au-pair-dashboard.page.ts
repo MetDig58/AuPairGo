@@ -1,16 +1,14 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
+import { IonHeader, IonTitle, IonToolbar, IonButtons, IonIcon, IonButton, IonMenuButton } from '@ionic/angular';
 
 @Component({
   selector: 'app-au-pair-dashboard',
   templateUrl: './au-pair-dashboard.page.html',
   styleUrls: ['./au-pair-dashboard.page.scss'],
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule],
+  imports: [IonButton, IonIcon, IonButtons, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, IonMenuButton],
 })
-export class AuPairDashboardPage implements OnInit {
+export class AuPairDashboardPage {
   constructor() {}
-
-  ngOnInit() {}
 }
