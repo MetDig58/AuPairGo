@@ -1,0 +1,70 @@
+<ion-header class="header-toolbar">
+  <ion-toolbar>
+    <ion-buttons class="header-button" slot="start">
+      <ion-menu-button auto-hide="false" color="secondary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="header-title">Au Pair Dashboard</ion-title>
+    <ion-buttons class="header-button" slot="end">
+      <ion-button fill="clear">
+        <ion-icon slot="icon-only" name="notifications-outline" color="primary"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card class="name-card">
+    <ion-card-content style="font-size: x-large">Hello, Au Pair!</ion-card-content>
+  </ion-card>
+  <ion-card class="status-card">
+    <ion-card-content>
+      <div class="status-container">
+        <ion-icon slot="icon-only" name="alert-circle" color="danger"></ion-icon>
+        <span class="status-text">STATUS: NOT STARTED</span>
+      </div>
+    </ion-card-content>
+  </ion-card>
+  <ion-card class="location-card">
+    <ion-card-content>
+      <div class="pickup-time-container">
+        <ion-icon name="time-outline"></ion-icon>
+        <span class="pickup-time">Next Pickup: 00:00</span>
+      </div>
+      <div class="last-location-container">
+        <ion-icon src="assets/icon/satellite-icon.svg" color="tertiary"></ion-icon>
+        <span class="last-location">Location: Sent 15s ago</span>
+      </div>
+      <br />
+      <br />
+      <div class="kid-container">
+        <ion-icon src="assets/icon/child-icon.svg" color="secondary"></ion-icon>
+        <span class="kid-name">Kid: Liam</span>
+      </div>
+      <div class="pick-up-container">
+        <ion-icon name="pin-sharp" color="tertiary"></ion-icon>
+        <span class="pick-up">Fetch From: St Johns Prep</span>
+      </div>
+      <div class="drop-off-container">
+        <ion-icon name="location-sharp" color="primary"></ion-icon>
+        <span class="drop-off">Drop Off: Home</span>
+      </div>
+    </ion-card-content>
+  </ion-card>
+  <ion-card class="check-in-card">
+    <ion-button class="check-in-button" color="tertiary" style="font-size: large">Start Trip/ Check In</ion-button>
+  </ion-card>
+</ion-content>
+
+<ion-footer class="custom-footer">
+  <div class="footer-container">
+    <div class="footer-tab">
+      <ion-icon name="car-sport-outline"></ion-icon>
+      <span>My Tasks</span>
+    </div>
+    <div class="divider"></div>
+    <div class="footer-tab">
+      <ion-icon name="book-outline"></ion-icon>
+      <span>History</span>
+    </div>
+  </div>
+</ion-footer>
