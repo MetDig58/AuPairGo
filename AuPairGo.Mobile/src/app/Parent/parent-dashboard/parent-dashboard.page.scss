@@ -1,0 +1,42 @@
+.header-title {
+  text-align: center;
+  position: relative;
+}
+
+.custom-footer {
+  background-color: #1F1F1F;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 60px;
+}
+
+.footer-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  color: var(--ion-color-secondary);
+}
+
+.footer-tab ion-icon {
+  font-size: 26px;
+}
+
+.divider {
+  width: 1px;
+  background-color: black;
+  margin: 10px 0;
+}
+
+.name-card {
+  margin-bottom: 35px;
+  margin-top: 15px;
+}
